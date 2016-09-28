@@ -9,12 +9,13 @@
 
 void main(){
 	EngineHelper::InitializeGLFW(3, 3, false);
-	WindowManager::InitializeWindow(600, 800, "Egeboi");
+	WindowManager::InitializeWindow(600, 800, "Animation");
 	EventManager::InitializeEvents();
 	EngineHelper::InitializeGlew();
 	GraphicsManager::InitializeGraphics();
+	GraphicsManager::InitializeShaders();
+	GraphicsManager::InitializeData();
 
-	// THIS CODE WILL BE MOVED LATER
 	
 	EngineHelper::Update();
 
