@@ -1,7 +1,14 @@
 #pragma once
 
+#include <vector>
 #include "ShaderProgram.h"
 #include "VAO.h"
+#include "Mesh.h"
+
+enum MeshType {
+	TRIANGLE,
+	CUBE
+};
 
 class GraphicsManager
 {
@@ -14,8 +21,16 @@ public:
 	static void InitializeGraphics();
 	static void InitializeShaders();
 	static void InitializeData();
+
+	static bool IsWireframeModeOn() { return isWireframeModeOn; }
+	static void SetWireframeMode(bool wireframeMode);
 private:
 	static ShaderProgram denemeShader;
 	static VAO vao;
+
+	static bool isWireframeModeOn;
+	static std::vector<Mesh> meshList;
+
+	static int width, height;
 };
 

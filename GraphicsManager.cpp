@@ -2,8 +2,13 @@
 #include "WindowManager.h"
 #include "glew.h"
 #include "glfw3.h"
+#include <glm.hpp>
+#include "glm/glm/gtc/matrix_transform.hpp"
 
 #include <iostream>
+
+using glm::vec3;
+using std::vector;
 
 std::string shaderLocation = "Shaders/";
 std::string vertexShaderSuffix = ".vert";
@@ -13,6 +18,10 @@ std::string denemeShaderName = "Deneme";
 
 ShaderProgram GraphicsManager::denemeShader;
 VAO GraphicsManager::vao;
+bool GraphicsManager::isWireframeModeOn = false;
+int GraphicsManager::width;
+int GraphicsManager::height;
+std::vector<Mesh> GraphicsManager::meshList;
 
 GraphicsManager::GraphicsManager()
 {
@@ -26,12 +35,26 @@ GraphicsManager::~GraphicsManager()
 void GraphicsManager::Render()
 {
 	glClearColor(0.2f, 0.5f, 0.5f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	denemeShader.Use();
-	vao.Bind();
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	vao.Unbind();
+
+	glm::mat4 ViewMatrix;
+	ViewMatrix = glm::translate(ViewMatrix, glm::vec3(0.0f, 0.0f, -100.0f));
+
+	glm::mat4 ProjectionMatrix;
+	ProjectionMatrix = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
+
+	int location;
+	location = glGetUniformLocation(denemeShader.program, "ViewMatrix");
+	glUniformMatrix4fv(location, 1, GL_FALSE, &(ViewMatrix[0][0]));
+	location = glGetUniformLocation(denemeShader.program, "ProjectionMatrix");
+	glUniformMatrix4fv(location, 1, GL_FALSE, &(ProjectionMatrix[0][0]));
+
+	for (unsigned int i = 0; i < meshList.size(); ++i) {
+		meshList[i].Draw(denemeShader);
+	}
+	denemeShader.Unuse();
 
 	glfwSwapBuffers(WindowManager::GetWindow());
 }
@@ -39,6 +62,8 @@ void GraphicsManager::Render()
 void GraphicsManager::ResetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
 {
 	glViewport(x, y, width, height);
+	GraphicsManager::width = width;
+	GraphicsManager::height = height;
 }
 
 void GraphicsManager::InitializeGraphics()
@@ -47,6 +72,8 @@ void GraphicsManager::InitializeGraphics()
 	glfwGetFramebufferSize(WindowManager::GetWindow(), &width, &height);
 
 	ResetViewport(0, 0, width, height);
+
+	glEnable(GL_DEPTH_TEST);
 }
 
 void GraphicsManager::InitializeShaders()
@@ -62,24 +89,102 @@ void GraphicsManager::InitializeShaders()
 void GraphicsManager::InitializeData()
 {
 	// Triangle
-	GLfloat vertices[] = {
-		-1.0f, -1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f
-	};
+	/*vector<Vertex> vertices;
+	vertices.push_back(Vertex(vec3(-1.0f, -1.0f, 0.0f), vec3(1.0f, 1.0f, 1.0f)));
+	vertices.push_back(Vertex(vec3(1.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 1.0f)));
+	vertices.push_back(Vertex(vec3(1.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f)));
+	vertices.push_back(Vertex(vec3(-1.0f, 1.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f)));
 
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
+	vector<GLuint> indices;
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(2);
+	indices.push_back(0);
+	indices.push_back(2);
+	indices.push_back(3);*/
 
-	vao.Generate();
-	vao.Bind();
+	// CUBE
+	vector<Vertex> vertices;
+	// Bottom left
+	vertices.push_back(Vertex(vec3(-1.0f, -1.0f, -1.0f), vec3(1.0f, 0.0f, 0.0f))); // front 0
+	vertices.push_back(Vertex(vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f, 1.0f, 1.0f))); // back 1
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	// Bottom right
+	vertices.push_back(Vertex(vec3(1.0f, -1.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f))); // front 2
+	vertices.push_back(Vertex(vec3(1.0f, -1.0f, 1.0f), vec3(1.0f, 0.0f, 1.0f))); // back 3
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
+	// Top right
+	vertices.push_back(Vertex(vec3(1.0f, 1.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f))); // front 4
+	vertices.push_back(Vertex(vec3(1.0f, 1.0f, 1.0f), vec3(0.0f, 1.0f, 1.0f)));	// back 5
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	vao.Unbind();
+	// Top left
+	vertices.push_back(Vertex(vec3(-1.0f, 1.0f, -1.0f), vec3(1.0f, 1.0f, 0.0f))); // front 6
+	vertices.push_back(Vertex(vec3(-1.0f, 1.0f, 1.0f), vec3(0.0f, 0.0f, 1.0f))); // back 7
+
+	vector<GLuint> indices;
+	// Front face
+	indices.push_back(0);
+	indices.push_back(2);
+	indices.push_back(4);
+	indices.push_back(0);
+	indices.push_back(4);
+	indices.push_back(6);
+
+	// Back face
+	indices.push_back(1);
+	indices.push_back(3);
+	indices.push_back(5);
+	indices.push_back(1);
+	indices.push_back(5);
+	indices.push_back(7);
+
+	// Left face
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(7);
+	indices.push_back(0);
+	indices.push_back(7);
+	indices.push_back(6);
+
+	// Right face
+	indices.push_back(2);
+	indices.push_back(3);
+	indices.push_back(5);
+	indices.push_back(2);
+	indices.push_back(5);
+	indices.push_back(4);
+
+	// Top face
+	indices.push_back(6);
+	indices.push_back(4);
+	indices.push_back(5);
+	indices.push_back(6);
+	indices.push_back(5);
+	indices.push_back(7);
+
+	// Bottom face
+	indices.push_back(0);
+	indices.push_back(2);
+	indices.push_back(3);
+	indices.push_back(0);
+	indices.push_back(3);
+	indices.push_back(1);
+
+	vector<Vertex> vertexVector;
+	Mesh cubeMesh(vertices, indices);
+	cubeMesh.Translation(vec3(0.0f, 0.0f, 0.0f));
+	cubeMesh.Rotation(vec3(20.0f, 20.0f, 0.0f));
+	cubeMesh.Scale(vec3(0.5f, 0.5, 0.5f));
+
+	meshList.push_back(cubeMesh);
+}
+
+void GraphicsManager::SetWireframeMode(bool wireframeMode)
+{
+	isWireframeModeOn = wireframeMode;
+
+	if (isWireframeModeOn)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

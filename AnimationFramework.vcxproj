@@ -71,7 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\glfw\include;$(ProjectDir)\glew-2.0.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\glfw\include;$(ProjectDir)\glew-2.0.0\include;$(ProjectDir)\glm\glm;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)\glew-2.0.0\lib\Release\Win32;$(ProjectDir)\glfw\lib-vc2015;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -90,7 +90,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)\glfw\include\GLFW;$(ProjectDir)\glew-2.0.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\glfw\include\GLFW;$(ProjectDir)\glew-2.0.0\include\GL;$(ProjectDir)\glm\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +151,7 @@
     <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Util.cpp" />
@@ -161,11 +162,16 @@
     <ClInclude Include="EngineHelper.h" />
     <ClInclude Include="EventManager.h" />
     <ClInclude Include="GraphicsManager.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="WindowManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Deneme.frag" />
+    <None Include="Shaders\Deneme.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
