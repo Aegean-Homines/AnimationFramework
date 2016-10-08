@@ -5,7 +5,7 @@
 #include "Types.h"
 #include "ShaderProgram.h"
 
-using glm::dvec3;
+using glm::vec3;
 using std::vector;
 
 class SkeletonNode
@@ -16,7 +16,7 @@ public:
 
 	// Methods
 	void Draw(ShaderProgram const & program);
-	void AddSkeletonNode(dvec3 translate, dvec3 rotate, dvec3 scale, MeshType meshType);
+	void AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType meshType);
 	SkeletonNode* GetChild(unsigned int index) { if (index <= children.size()) return children[index]; return NULL; }
 	// Getter & Setter
 	MeshType GetMeshType() const { return meshType; }
@@ -28,7 +28,7 @@ public:
 	// So this is a reminder to myself: this is a one-shot framework for a small project
 	// Code doesn't have to be beautiful and elegant - it needs to be written fast
 	// Deal with it.
-	dvec3 Translate, Rotate, Scale;
+	vec3 Translate, Rotate, Scale;
 private:
 
 	MeshType meshType;

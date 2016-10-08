@@ -6,7 +6,7 @@
 #include "VAO.h"
 #include "Mesh.h"
 #include "Types.h"
-#include "Skeleton.h"
+#include "SkeletonNode.h"
 #include "Camera.h"
 
 typedef std::unordered_map<MeshType, Mesh*> MeshMap;
