@@ -1,9 +1,12 @@
 #include "GraphicsManager.h"
 #include "WindowManager.h"
-#include "glew.h"
-#include "glfw3.h"
+#include "EventManager.h"
+#include "SkeletonNode.h"
+
+#include <glew.h>
+#include <glfw3.h>
 #include <glm.hpp>
-#include "glm/glm/gtc/matrix_transform.hpp"
+#include <gtc/matrix_transform.hpp>
 
 #include <iostream>
 
@@ -21,7 +24,8 @@ VAO GraphicsManager::vao;
 bool GraphicsManager::isWireframeModeOn = false;
 int GraphicsManager::width;
 int GraphicsManager::height;
-std::vector<Mesh> GraphicsManager::meshList;
+MeshMap GraphicsManager::meshMap;
+Camera GraphicsManager::camera;
 
 GraphicsManager::GraphicsManager()
 {
@@ -40,7 +44,8 @@ void GraphicsManager::Render()
 	denemeShader.Use();
 
 	glm::mat4 ViewMatrix;
-	ViewMatrix = glm::translate(ViewMatrix, glm::vec3(0.0f, 0.0f, -100.0f));
+	ViewMatrix = camera.GetViewMatrix();
+	//ViewMatrix = glm::translate(ViewMatrix, glm::vec3(0.0f, 0.0f, -10.0f));
 
 	glm::mat4 ProjectionMatrix;
 	ProjectionMatrix = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 1000.0f);
@@ -51,12 +56,20 @@ void GraphicsManager::Render()
 	location = glGetUniformLocation(denemeShader.program, "ProjectionMatrix");
 	glUniformMatrix4fv(location, 1, GL_FALSE, &(ProjectionMatrix[0][0]));
 
-	for (unsigned int i = 0; i < meshList.size(); ++i) {
-		meshList[i].Draw(denemeShader);
-	}
+	skeleton.Draw(denemeShader);
+
 	denemeShader.Unuse();
 
 	glfwSwapBuffers(WindowManager::GetWindow());
+}
+
+void GraphicsManager::Update()
+{
+	// Toggle debug mode
+	if (EventManager::IsKeyPressed(GLFW_KEY_N))
+		isWireframeModeOn = !isWireframeModeOn;
+
+	camera.Update();
 }
 
 void GraphicsManager::ResetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
@@ -170,13 +183,19 @@ void GraphicsManager::InitializeData()
 	indices.push_back(3);
 	indices.push_back(1);
 
-	vector<Vertex> vertexVector;
-	Mesh cubeMesh(vertices, indices);
-	cubeMesh.Translation(vec3(0.0f, 0.0f, 0.0f));
-	cubeMesh.Rotation(vec3(20.0f, 20.0f, 0.0f));
-	cubeMesh.Scale(vec3(0.5f, 0.5, 0.5f));
+	Mesh* cubeMesh = new Mesh(vertices, indices);
+	meshMap.insert(std::pair<MeshType, Mesh*>(CUBE, cubeMesh));
 
-	meshList.push_back(cubeMesh);
+	// Create skeleton
+	skeleton.AddSkeletonNode(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 1.0f, 1.0f), CUBE);
+	skeleton.AddSkeletonNode(vec3(8.0f, 2.0f, -10.0f), vec3(-45.0f, 45.0f, 45.0f), vec3(2.0f, 2.0f, 2.0f), CUBE);
+
+	SkeletonNode* skeletonNode = skeleton.GetChild(0);
+	skeletonNode->AddSkeletonNode(vec3(0.0f, -3.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.4f, 1.4f, 1.4f), CUBE);
+
+	// Set Camera
+	camera.CameraPosition(vec3(0.0f, 0.0f, 5.0f));
+	camera.CameraTarget(vec3(0.0f, 0.0f, 0.0f));
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)
@@ -187,4 +206,9 @@ void GraphicsManager::SetWireframeMode(bool wireframeMode)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+Mesh* GraphicsManager::GetMesh(MeshType type)
+{
+	return meshMap.at(type);
 }

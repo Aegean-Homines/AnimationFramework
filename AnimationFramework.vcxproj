@@ -71,8 +71,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\glfw\include;$(ProjectDir)\glew-2.0.0\include;$(ProjectDir)\glm\glm;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\glew-2.0.0\lib\Release\Win32;$(ProjectDir)\glfw\lib-vc2015;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\Libraries\glfw\include\GLFW;$(ProjectDir)\Libraries\glew-2.0.0\include\GL;$(ProjectDir)\Libraries\fbx\include;$(ProjectDir)\Libraries\glm\glm;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\Libraries\glew-2.0.0\lib\Release\Win32;$(ProjectDir)\Libraries\glfw\lib-vc2015;$(ProjectDir)\Libraries\fbx\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -89,14 +89,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)\glfw\include\GLFW;$(ProjectDir)\glew-2.0.0\include\GL;$(ProjectDir)\glm\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FBXSDK_SHARED;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\glfw\lib-vc2015;$(ProjectDir)\glew-2.0.0\lib\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\Libraries\glfw\lib-vc2015;$(ProjectDir)\Libraries\glew-2.0.0\lib\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -147,24 +148,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="EngineHelper.cpp" />
     <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="Skeleton.cpp" />
+    <ClCompile Include="SkeletonNode.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="EngineHelper.h" />
     <ClInclude Include="EventManager.h" />
     <ClInclude Include="GraphicsManager.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ModelManager.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="Skeleton.h" />
+    <ClInclude Include="SkeletonNode.h" />
+    <ClInclude Include="Types.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="WindowManager.h" />

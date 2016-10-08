@@ -2,8 +2,8 @@
 #include "WindowManager.h"
 #include "GraphicsManager.h"
 #include "EventManager.h"
-#include "glew.h"
-#include "glfw3.h"
+#include <glew.h>
+#include <glfw3.h>
 
 #include <iostream>
 
@@ -37,7 +37,12 @@ void EngineHelper::InitializeGlew()
 void EngineHelper::Update()
 {
 	while (!glfwWindowShouldClose(WindowManager::GetWindow())) {
+		double currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 		EventManager::UpdateEvents();
+		WindowManager::Update();
+		GraphicsManager::Update();
 		GraphicsManager::Render();
 	}
 }
@@ -49,3 +54,6 @@ void EngineHelper::Exit()
 
 	std::cout << "Everything in the engine is cleaned up!" << std::endl;
 }
+
+double EngineHelper::lastFrame = 0.0f;
+double EngineHelper::deltaTime = 0.0f;

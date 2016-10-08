@@ -1,6 +1,7 @@
 #pragma once
 
-#include "glew.h"
+#include <glew.h>
+
 class VAO
 {
 public:

@@ -14,6 +14,7 @@ public:
 	static void InitializeWindow(unsigned int width, unsigned int height, char* windowTitle);
 	static GLFWwindow* GetWindow() { return window; }
 
+	static void Update();
 	static void Cleanup();
 
 };

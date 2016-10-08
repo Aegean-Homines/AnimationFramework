@@ -1,5 +1,6 @@
 #include "WindowManager.h"
-#include "glfw3.h"
+#include "EventManager.h"
+#include <glfw3.h>
 #include <iostream>
 
 GLFWwindow * WindowManager::window = NULL;
@@ -24,6 +25,13 @@ void WindowManager::InitializeWindow(unsigned int width, unsigned int height, ch
 	}
 
 	glfwMakeContextCurrent(window);
+}
+
+void WindowManager::Update()
+{
+	// Quit application
+	if (EventManager::IsKeyPressed(GLFW_KEY_ESCAPE))
+		glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 void WindowManager::Cleanup()

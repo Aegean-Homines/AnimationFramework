@@ -1,14 +1,15 @@
 #pragma once
+#define GLM_FORCE_RADIANS
 
-#include <vector>
+#include <unordered_map>
 #include "ShaderProgram.h"
 #include "VAO.h"
 #include "Mesh.h"
+#include "Types.h"
+#include "Skeleton.h"
+#include "Camera.h"
 
-enum MeshType {
-	TRIANGLE,
-	CUBE
-};
+typedef std::unordered_map<MeshType, Mesh*> MeshMap;
 
 class GraphicsManager
 {
@@ -17,6 +18,7 @@ public:
 	~GraphicsManager();
 
 	static void Render();
+	static void Update();
 	static void ResetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 	static void InitializeGraphics();
 	static void InitializeShaders();
@@ -24,13 +26,23 @@ public:
 
 	static bool IsWireframeModeOn() { return isWireframeModeOn; }
 	static void SetWireframeMode(bool wireframeMode);
+
+	static Mesh* GetMesh(MeshType type);
+	static Camera& GetCamera() { return camera; }
+	static int Width() { return width; }
+	static void Width(int newWidth) { width = newWidth; }
+	static int Height() { return height; }
+	static void Height(int newHeight) { height = newHeight; }
 private:
 	static ShaderProgram denemeShader;
 	static VAO vao;
 
 	static bool isWireframeModeOn;
-	static std::vector<Mesh> meshList;
+	static MeshMap meshMap;
 
 	static int width, height;
+
+	static SkeletonNode skeleton;
+	static Camera camera;
 };
 
