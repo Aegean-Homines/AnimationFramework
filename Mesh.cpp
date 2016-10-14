@@ -3,18 +3,25 @@
 #include "Mesh.h"
 #include <glfw3.h>
 
-Mesh::Mesh(vector<Vertex> const & vertices, vector<GLuint> const & indices):
-	vertices(vertices), indices(indices)
+Mesh::Mesh(vector<Vertex> const & vertices, vector<GLuint> const & indices, GLuint drawType)
+	:
+	vertices(vertices), indices(indices), drawType(drawType)
 {
-
 	InitializeMesh();
 }
 
-void Mesh::Draw(ShaderProgram program)
+void Mesh::Draw(ShaderProgram program) 
 {
 	// Draw mesh
 	vao.Bind();
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(drawType, indices.size(), GL_UNSIGNED_INT, 0);
+	vao.Unbind();
+}
+
+void Mesh::BufferNewData(vector<Vertex> const & newVertices)
+{
+	vao.Bind();
+	glBufferData(GL_ARRAY_BUFFER, newVertices.size() * sizeof(Vertex), &newVertices[0], GL_STATIC_DRAW);
 	vao.Unbind();
 }
 

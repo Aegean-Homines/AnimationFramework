@@ -4,9 +4,11 @@
 
 using std::cout;
 using std::endl;
+
 ModelManager::ModelManager()
 {
-	rootNode = NULL;
+	RootNode(NULL);
+	counter = 0;
 }
 
 ModelManager::~ModelManager()
@@ -55,9 +57,21 @@ void ModelManager::CreateFbxScene(const char* sceneName, const char* fileName)
 void ModelManager::PrintTree()
 {
 	FbxNode* fbxRootNode = fbxScene->GetRootNode();
+	RootNode(new SkeletonNode());
 	if (fbxRootNode) {
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
 			PrintNode(fbxRootNode->GetChild(i));
+	}
+}
+
+void ModelManager::CreateTree()
+{
+	FbxNode* fbxRootNode = fbxScene->GetRootNode();
+	RootNode(new SkeletonNode());
+	counter = 0;
+	if (fbxRootNode) {
+		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
+			InsertNode(fbxRootNode->GetChild(i), RootNode());
 	}
 }
 
@@ -90,6 +104,56 @@ void ModelManager::PrintNode(FbxNode* fbxNode)
 	numTabs--;
 	PrintTabs();
 	printf("</node>\n");
+}
+
+void ModelManager::InsertNode(FbxNode* fbxNode, SkeletonNode* parent)
+{
+	FbxNodeAttribute* attribute = fbxNode->GetNodeAttribute();
+	if (attribute)
+	{
+		FbxNodeAttribute::EType attributeType = attribute->GetAttributeType();
+		if (attributeType != FbxNodeAttribute::eSkeleton)
+			return;
+	}
+	else {
+		return;
+	}
+	// Get data from fbx
+	const char* nodeName = fbxNode->GetName();
+	FbxDouble3 fbxTranslation = fbxNode->LclTranslation.Get();
+	FbxDouble3 fbxRotation = fbxNode->LclRotation.Get();
+	FbxDouble3 fbxScaling = fbxNode->LclScaling.Get();
+
+	FbxAMatrix& localTransform = fbxNode->EvaluateLocalTransform();
+	FbxVector4 transform = localTransform.GetT();
+	FbxVector4 rotate = localTransform.GetR();
+	FbxVector4 scaling = localTransform.GetS();
+	vec3 translation;
+	ConvertFbxDouble4ToGlmVec3(transform, translation);
+	vec3 rotation;
+	ConvertFbxDouble4ToGlmVec3(rotate, rotation);
+	vec3 scale;
+	ConvertFbxDouble4ToGlmVec3(scaling, scale);
+	
+
+	// convert into my format
+	/*vec3 translation;
+	ConvertFbxDouble3ToGlmVec3(fbxTranslation, translation);
+	vec3 rotation;
+	ConvertFbxDouble3ToGlmVec3(fbxRotation, rotation);
+	vec3 scale;
+	ConvertFbxDouble3ToGlmVec3(fbxScaling, scale);*/
+
+	// Add a new node to the parent
+	SkeletonNode* child = parent->AddSkeletonNode(translation, rotation, scale, MeshType::CUBE, nodeName);
+	child->level = counter;
+
+	counter++;
+	// Recursively process other children
+	for (int j = 0; j < fbxNode->GetChildCount(); j++)
+		InsertNode(fbxNode->GetChild(j), child);
+	counter--;
+
 }
 
 ModelManager* ModelManager::instance = NULL;
@@ -138,4 +202,18 @@ void ModelManager::PrintAttribute(FbxNodeAttribute* attribute)
 	PrintTabs();
 	// Note: to retrieve the character array of a FbxString, use its Buffer() method.
 	printf("<attribute type='%s' name='%s'/>\n", typeName.Buffer(), attrName.Buffer());
+}
+
+void ModelManager::ConvertFbxDouble3ToGlmVec3(FbxDouble3 const & fbxVec3, glm::vec3 & floatVector)
+{
+	floatVector[0] = static_cast<float>(fbxVec3[0]);
+	floatVector[1] = static_cast<float>(fbxVec3[1]);
+	floatVector[2] = static_cast<float>(fbxVec3[2]);
+}
+
+void ModelManager::ConvertFbxDouble4ToGlmVec3(FbxVector4 const & fbxVec4, glm::vec3 & floatVector)
+{
+	floatVector[0] = static_cast<float>(fbxVec4[0]);
+	floatVector[1] = static_cast<float>(fbxVec4[1]);
+	floatVector[2] = static_cast<float>(fbxVec4[2]);
 }

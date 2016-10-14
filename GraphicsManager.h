@@ -6,8 +6,8 @@
 #include "VAO.h"
 #include "Mesh.h"
 #include "Types.h"
-#include "SkeletonNode.h"
 #include "Camera.h"
+#include "SkeletonNode.h"
 
 typedef std::unordered_map<MeshType, Mesh*> MeshMap;
 
@@ -34,15 +34,15 @@ public:
 	static int Height() { return height; }
 	static void Height(int newHeight) { height = newHeight; }
 private:
-	static ShaderProgram denemeShader;
+	static ShaderProgram simpleShader;
 	static VAO vao;
 
 	static bool isWireframeModeOn;
 	static MeshMap meshMap;
 
 	static int width, height;
-
-	static SkeletonNode skeleton;
 	static Camera camera;
+
+	static SkeletonNode node;
 };
 

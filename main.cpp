@@ -33,6 +33,7 @@ void main(){
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
 	manager->CreateFbxScene(TadModelName.c_str(), (ModelMainDirectory + TadModelName + FbxExtension).c_str());
+	manager->CreateTree();
 	//manager->PrintTree();
 
 	EngineHelper::Update();

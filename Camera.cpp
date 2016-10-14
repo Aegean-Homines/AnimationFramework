@@ -9,7 +9,7 @@
 
 const vec3 up(0.0f, 1.0f, 0.0f);
 
-Camera::Camera(vec3 cameraPosition /*= vec3(0.0f, 0.0f, 0.0f)*/, vec3 cameraTarget /*= vec3(0.0f, 0.0f, 0.0f)*/):
+Camera::Camera(vec3 cameraPosition /*= vec3(0.0f, 0.0f, 0.0f)*/, vec3 cameraTarget /*= vec3(0.0f, 0.0f, 0.0f)*/) :
 	cameraPosition(cameraPosition), cameraTarget(cameraTarget), cameraFront(0.0f, 0.0f, -1.0f)
 {
 	yaw = -90.0f;
@@ -22,16 +22,6 @@ Camera::~Camera()
 
 mat4 Camera::GetViewMatrix()
 {
-	/*
-	// Direction vector
-	vec3 cameraDirection = glm::normalize(cameraPosition - cameraTarget);
-
-	// Right axis
-	vec3 up = vec3(0.0f, 1.0f, 0.0f);
-	vec3 right = glm::normalize(glm::cross(cameraDirection, up));
-
-	// Form the view matrix with LookAt
-	return glm::lookAt(cameraPosition, cameraTarget, up);*/
 
 	return glm::lookAt(cameraPosition, cameraPosition + cameraFront, up);
 }
@@ -72,5 +62,5 @@ void Camera::Update()
 
 		cameraFront = glm::normalize(front);
 	}
-	
+
 }

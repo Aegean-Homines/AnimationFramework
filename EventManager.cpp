@@ -23,6 +23,7 @@ EventManager::~EventManager()
 
 void EventManager::UpdateEvents()
 {
+	mouseDeltaX = mouseDeltaY = 0;
 	glfwPollEvents();
 }
 
@@ -65,6 +66,7 @@ void EventManager::MouseEventCallback(GLFWwindow* window, double xpos, double yp
 	mouseDeltaY = lastY - ypos;
 	lastX = xpos;
 	lastY = ypos;
+
 }
 
 void EventManager::MouseButtonEventCallback(GLFWwindow* window, int button, int action, int mods)

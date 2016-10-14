@@ -2,6 +2,7 @@
 
 enum MeshType {
 	TRIANGLE,
-	CUBE
+	CUBE,
+	LINE
 };
 

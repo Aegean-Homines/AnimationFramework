@@ -6,17 +6,19 @@
 #include "ShaderProgram.h"
 
 using glm::vec3;
+using glm::mat4;
 using std::vector;
 
 class SkeletonNode
 {
 public:
-	SkeletonNode();
+	SkeletonNode(std::string const & nodeName = "");
 	~SkeletonNode();
 
 	// Methods
 	void Draw(ShaderProgram const & program);
-	void AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType meshType);
+	SkeletonNode* AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType meshType, std::string const & nodeName = "");
+	void AddSkeletonNode(SkeletonNode* child);
 	SkeletonNode* GetChild(unsigned int index) { if (index <= children.size()) return children[index]; return NULL; }
 	// Getter & Setter
 	MeshType GetMeshType() const { return meshType; }
@@ -28,13 +30,19 @@ public:
 	// So this is a reminder to myself: this is a one-shot framework for a small project
 	// Code doesn't have to be beautiful and elegant - it needs to be written fast
 	// Deal with it.
-	vec3 Translate, Rotate, Scale;
+	vec3 localTranslate, localRotate, localScale;
+	mat4 worldTransformation;
+	int level;
 private:
-
+	// DATA
 	MeshType meshType;
 	vector<SkeletonNode* > children;
 	SkeletonNode* parent = NULL;
+	std::string nodeName;
 
+	// HELPER METHODS
+	void ResetTransformMatrix();
+	void DrawLinesBetweenNodes(ShaderProgram const & program);
 
 };
 

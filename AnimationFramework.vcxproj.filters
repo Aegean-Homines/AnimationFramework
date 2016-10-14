@@ -106,10 +106,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Deneme.frag">
+    <None Include="Shaders\Simple.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\Deneme.vert">
+    <None Include="Shaders\Simple.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

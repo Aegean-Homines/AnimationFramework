@@ -192,8 +192,8 @@
     <ClInclude Include="WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Deneme.frag" />
-    <None Include="Shaders\Deneme.vert" />
+    <None Include="Shaders\Simple.frag" />
+    <None Include="Shaders\Simple.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
