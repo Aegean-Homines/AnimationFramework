@@ -3,6 +3,7 @@
 #include "SkeletonNode.h"
 #include "GraphicsManager.h"
 #include "EventManager.h"
+#include "Quaternion.h"
 
 #include <glew.h>
 #include <glfw3.h>
@@ -39,20 +40,17 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 		// Reset matrix to identity
 		worldTransformation = mat4(1.0f);
 		// Translate, rotate and scale
-
+		
 		GLfloat rotationX, rotationY, rotationZ;
 		rotationX = localRotate.x;
 		rotationY = localRotate.y;
 		rotationZ = localRotate.z;
 
 		worldTransformation = glm::translate(worldTransformation, localTranslate);
-		if (j) {
-			worldTransformation = glm::rotate(worldTransformation, rotationZ * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
-			worldTransformation = glm::rotate(worldTransformation, rotationY * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
-			worldTransformation = glm::rotate(worldTransformation, rotationX * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
-		}
+		worldTransformation = glm::rotate(worldTransformation, rotationZ * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
+		worldTransformation = glm::rotate(worldTransformation, rotationY * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
+		worldTransformation = glm::rotate(worldTransformation, rotationX * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
 		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
-
 
 		// Get parent transform matrix and concat with my current one to find its place in world coords
 		if (parent != NULL) {
@@ -68,7 +66,6 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 
 		// Draw lines between points
 		DrawLinesBetweenNodes(program);
-
 	}
 
 	for (unsigned int i = 0; i < children.size(); ++i) {
@@ -109,7 +106,7 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 
 	// for some weird thing between root and its children
 	// remove this after figuring out a cleaner way of handling it
-	if (parent->parent == NULL)
+	if (parent == NULL || parent->parent == NULL)
 		return;
 
 	Mesh* myMesh = GraphicsManager::GetMesh(LINE);
