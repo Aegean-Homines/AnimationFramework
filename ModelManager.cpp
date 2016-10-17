@@ -320,6 +320,7 @@ void ModelManager::InsertNode(FbxNode* fbxNode, SkeletonNode* parent)
 
 	// Add a new node to the parent
 	SkeletonNode* child = parent->AddSkeletonNode(translation, rotation, scale, MeshType::CUBE, nodeName);
+	child->fbxMatrix = localTransform;
 	child->level = counter;
 
 	counter++;

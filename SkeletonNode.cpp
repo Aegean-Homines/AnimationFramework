@@ -39,34 +39,35 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 
 		// Reset matrix to identity
 		worldTransformation = mat4(1.0f);
+
 		// Translate, rotate and scale
-		
-		// convert to radian
 		GLfloat rotationX, rotationY, rotationZ;
 		rotationX = localRotate.x;
 		rotationY = localRotate.y;
 		rotationZ = localRotate.z;
 
 		worldTransformation = glm::translate(worldTransformation, localTranslate);
-		/*worldTransformation = glm::rotate(worldTransformation, rotationZ, vec3(0.0f, 0.0f, 1.0f));
-		worldTransformation = glm::rotate(worldTransformation, rotationY, vec3(0.0f, 1.0f, 0.0f));
-		worldTransformation = glm::rotate(worldTransformation, rotationX, vec3(1.0f, 0.0f, 0.0f));*/
 		Quaternion rotationQuat(localRotate);
 		rotationQuat.Normalize();
 		mat4 rotationMatrix = rotationQuat.RotationMatrix();
 		worldTransformation = worldTransformation * rotationMatrix;
 		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
 
-		// Get parent transform matrix and concat with my current one to find its place in world coords
-		if (parent != NULL) {
-			mat4 & parentTransform = parent->worldTransformation;
-			worldTransformation = parentTransform * worldTransformation;
+
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < 4; ++j) {
+				worldTransformation[i][j] = fbxMatrix[i][j];
+			}
 		}
 
+		// Get parent transform matrix and concat with my current one to find its place in world coords
+		mat4 & parentTransform = parent->worldTransformation;
+		worldTransformation = parentTransform * worldTransformation;
 
+		float const & a = fbxMatrix[0][0];
+		float const & b = worldTransformation[0][0];
 		GLint transformLocation = glGetUniformLocation(program.program, "Transform");
-		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
-
+		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(b));
 		myMesh->Draw(program);
 
 		// Draw lines between points
@@ -116,7 +117,7 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 
 	Mesh* myMesh = GraphicsManager::GetMesh(LINE);
 
-	// We're sending identitiy matrix as its model
+	// We're sending identity matrix as its model
 	mat4 identityMatrix;
 	GLint transformLocation = glGetUniformLocation(program.program, "Transform");
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(identityMatrix[0][0]));

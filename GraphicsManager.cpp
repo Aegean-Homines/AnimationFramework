@@ -46,9 +46,9 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 	vec3 scale = vec3(20.0f, 20.0f, 1.0f);
 
 	worldTransformation = glm::translate(worldTransformation, translate);
-	worldTransformation = glm::rotate(worldTransformation, rotate.z * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.y * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.x * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
+	worldTransformation = glm::rotate(worldTransformation, rotate.z, vec3(0.0f, 0.0f, 1.0f));
+	worldTransformation = glm::rotate(worldTransformation, rotate.y, vec3(0.0f, 1.0f, 0.0f));
+	worldTransformation = glm::rotate(worldTransformation, rotate.x, vec3(1.0f, 0.0f, 0.0f));
 	worldTransformation = glm::scale(worldTransformation, scale);
 
 	GLint transformLocation = glGetUniformLocation(program.program, "Transform");

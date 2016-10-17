@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "Types.h"
 #include "ShaderProgram.h"
+#include <fbxsdk.h>
 
 using glm::vec3;
 using glm::mat4;
@@ -33,6 +34,8 @@ public:
 	// Deal with it.
 	vec3 localTranslate, localRotate, localScale;
 	mat4 worldTransformation;
+	FbxAMatrix fbxMatrix;
+
 	int level;
 private:
 	// DATA
