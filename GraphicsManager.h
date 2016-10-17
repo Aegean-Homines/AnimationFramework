@@ -44,5 +44,7 @@ private:
 	static Camera camera;
 
 	static SkeletonNode node;
+
+	static void DrawGround(ShaderProgram& program);
 };
 

@@ -36,6 +36,8 @@ void main(){
 	manager->CreateTree();
 	//manager->PrintTree();
 
+	manager->PrintAnimationStacks();
+
 	EngineHelper::Update();
 
 	EngineHelper::Exit();

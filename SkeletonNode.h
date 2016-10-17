@@ -2,6 +2,7 @@
 
 #include <glm.hpp>
 #include <vector>
+#include <unordered_map>
 #include "Types.h"
 #include "ShaderProgram.h"
 
@@ -36,7 +37,7 @@ public:
 private:
 	// DATA
 	MeshType meshType;
-	vector<SkeletonNode* > children;
+	vector<SkeletonNode*> children;
 	SkeletonNode* parent = NULL;
 	std::string nodeName;
 

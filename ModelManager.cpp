@@ -64,9 +64,194 @@ void ModelManager::PrintTree()
 	}
 }
 
+void ModelManager::PrintAnimationStacks()
+{
+
+
+
+	int count = fbxScene->GetSrcObjectCount<FbxAnimStack>();
+	for (int i = 0; i < count; ++i) {
+		FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(i);
+		FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
+		takeInfo->mLocalTimeSpan.GetStart();
+		FbxTime start = takeInfo->mLocalTimeSpan.GetStart();
+		FbxTime end = takeInfo->mLocalTimeSpan.GetStop();
+		FbxLongLong frameCount = end.GetFrameCount(FbxTime::eFrames60) - start.GetFrameCount(FbxTime::eFrames60) + 1;
+
+		std::cout << "Anim Stack Name: " << animStack->GetName() << std::endl;
+
+		PrintAnimationStacks(animStack);
+	}
+}
+
+void ModelManager::PrintAnimationStacks(FbxAnimStack* stack)
+{
+	int layerCount = stack->GetMemberCount<FbxAnimLayer>();
+	std::cout << "\tStack has " << layerCount << " layers." << std::endl;
+
+	for (int i = 0; i < layerCount; ++i) {
+		FbxAnimLayer* layer = stack->GetMember<FbxAnimLayer>(i);
+
+		std::cout << "\tAnimLayer: " << i << std::endl;
+		PrintAnimationLayers(layer, fbxRootNode);
+	}
+}
+
+void ModelManager::PrintAnimationLayers(FbxAnimLayer* layer, FbxNode* node)
+{
+	int childCount = node->GetChildCount();
+	std::cout << "\t\tNode Name: " << node->GetName() << std::endl;
+	// Call display channels
+	PrintAnimationChannels(node, layer);
+	std::cout << std::endl;
+	// Loop through all the children and call everything again.
+	for (int i = 0; i < childCount; ++i) {
+		PrintAnimationLayers(layer, node->GetChild(i));
+	}
+}
+
+void ModelManager::PrintAnimationChannels(FbxNode* node, FbxAnimLayer* layer)
+{
+	FbxAnimCurve* lAnimCurve = NULL;
+	// Display general curves.
+	lAnimCurve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        TX\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        TY\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        TZ\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+
+	lAnimCurve = node->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        RX\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        RY\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        RZ\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+
+	lAnimCurve = node->LclScaling.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        SX\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclScaling.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        SY\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+	lAnimCurve = node->LclScaling.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z);
+	if (lAnimCurve)
+	{
+		FBXSDK_printf("        SZ\n");
+		DisplayCurveKeys(lAnimCurve);
+	}
+
+}
+
+void ModelManager::DisplayCurveKeys(FbxAnimCurve* curve)
+{
+	static const char* interpolation[] = { "?", "constant", "linear", "cubic" };
+	static const char* constantMode[] = { "?", "Standard", "Next" };
+	static const char* cubicMode[] = { "?", "Auto", "Auto break", "Tcb", "User", "Break", "User break" };
+	static const char* tangentWVMode[] = { "?", "None", "Right", "Next left" };
+
+	FbxTime   lKeyTime;
+	float   lKeyValue;
+	char    lTimeString[256];
+	FbxString lOutputString;
+	int     lCount;
+
+	int lKeyCount = curve->KeyGetCount();
+
+	for (lCount = 0; lCount < lKeyCount; lCount++)
+	{
+		lKeyValue = static_cast<float>(curve->KeyGetValue(lCount));
+		lKeyTime = curve->KeyGetTime(lCount);
+		lOutputString = "            Key Time: ";
+		lOutputString += lKeyTime.GetTimeString(lTimeString, FbxUShort(256));
+		lOutputString += ".... Key Value: ";
+		lOutputString += lKeyValue;
+		/*lOutputString += " [ ";
+		lOutputString += interpolation[InterpolationFlagToIndex(curve->KeyGetInterpolation(lCount))];
+		if ((curve->KeyGetInterpolation(lCount)&FbxAnimCurveDef::eInterpolationConstant) == FbxAnimCurveDef::eInterpolationConstant)
+		{
+			lOutputString += " | ";
+			lOutputString += constantMode[ConstantmodeFlagToIndex(curve->KeyGetConstantMode(lCount))];
+		}
+		else if ((curve->KeyGetInterpolation(lCount)&FbxAnimCurveDef::eInterpolationCubic) == FbxAnimCurveDef::eInterpolationCubic)
+		{
+			lOutputString += " | ";
+			lOutputString += cubicMode[TangentmodeFlagToIndex(curve->KeyGetTangentMode(lCount))];
+			lOutputString += " | ";
+			lOutputString += tangentWVMode[TangentweightFlagToIndex(curve->KeyGet(lCount).GetTangentWeightMode())];
+			lOutputString += " | ";
+			lOutputString += tangentWVMode[TangentVelocityFlagToIndex(curve->KeyGet(lCount).GetTangentVelocityMode())];
+		}
+		lOutputString += " ]";
+		lOutputString += "\n";*/
+		//FBXSDK_printf(lOutputString);
+		std::cout << lOutputString.Buffer() << std::endl;
+	}
+}
+
+void ModelManager::DisplayListCurveKeys(FbxAnimCurve* curve, FbxProperty* pProperty)
+{
+	std::cout << "DISPLAYERLISTCURVEKEYS" << std::endl;
+	FbxTime   lKeyTime;
+	int     lKeyValue;
+	char    lTimeString[256];
+	FbxString lListValue;
+	FbxString lOutputString;
+	int     lCount;
+
+	int lKeyCount = curve->KeyGetCount();
+
+	for (lCount = 0; lCount < lKeyCount; lCount++)
+	{
+		lKeyValue = static_cast<int>(curve->KeyGetValue(lCount));
+		lKeyTime = curve->KeyGetTime(lCount);
+
+		lOutputString = "            Key Time: ";
+		lOutputString += lKeyTime.GetTimeString(lTimeString, FbxUShort(256));
+		lOutputString += ".... Key Value: ";
+		lOutputString += lKeyValue;
+		lOutputString += " (";
+		lOutputString += pProperty->GetEnumValue(lKeyValue);
+		lOutputString += ")";
+
+		lOutputString += "\n";
+		FBXSDK_printf(lOutputString);
+	}
+}
+
 void ModelManager::CreateTree()
 {
-	FbxNode* fbxRootNode = fbxScene->GetRootNode();
+	fbxRootNode = fbxScene->GetRootNode();
 	RootNode(new SkeletonNode());
 	counter = 0;
 	if (fbxRootNode) {
@@ -93,10 +278,6 @@ void ModelManager::PrintNode(FbxNode* fbxNode)
 	cout << endl;
 	numTabs++;
 
-	// Print the node's attributes.
-	for (int i = 0; i < fbxNode->GetNodeAttributeCount(); i++)
-		PrintAttribute(fbxNode->GetNodeAttributeByIndex(i));
-
 	// Recursively print the children.
 	for (int j = 0; j < fbxNode->GetChildCount(); j++)
 		PrintNode(fbxNode->GetChild(j));
@@ -117,9 +298,11 @@ void ModelManager::InsertNode(FbxNode* fbxNode, SkeletonNode* parent)
 	}
 	else {
 		return;
-	}
+	} 
 	// Get data from fbx
 	const char* nodeName = fbxNode->GetName();
+
+
 	FbxDouble3 fbxTranslation = fbxNode->LclTranslation.Get();
 	FbxDouble3 fbxRotation = fbxNode->LclRotation.Get();
 	FbxDouble3 fbxScaling = fbxNode->LclScaling.Get();
@@ -134,15 +317,6 @@ void ModelManager::InsertNode(FbxNode* fbxNode, SkeletonNode* parent)
 	ConvertFbxDouble4ToGlmVec3(rotate, rotation);
 	vec3 scale;
 	ConvertFbxDouble4ToGlmVec3(scaling, scale);
-	
-
-	// convert into my format
-	/*vec3 translation;
-	ConvertFbxDouble3ToGlmVec3(fbxTranslation, translation);
-	vec3 rotation;
-	ConvertFbxDouble3ToGlmVec3(fbxRotation, rotation);
-	vec3 scale;
-	ConvertFbxDouble3ToGlmVec3(fbxScaling, scale);*/
 
 	// Add a new node to the parent
 	SkeletonNode* child = parent->AddSkeletonNode(translation, rotation, scale, MeshType::CUBE, nodeName);
@@ -164,44 +338,6 @@ void ModelManager::PrintTabs()
 {
 	for (int i = 0; i < numTabs; i++)
 		printf("\t");
-}
-
-FbxString ModelManager::GetAttributeTypeName(FbxNodeAttribute::EType type)
-{
-	switch (type) {
-	case FbxNodeAttribute::eUnknown: return "unidentified";
-	case FbxNodeAttribute::eNull: return "null";
-	case FbxNodeAttribute::eMarker: return "marker";
-	case FbxNodeAttribute::eSkeleton: return "skeleton";
-	case FbxNodeAttribute::eMesh: return "mesh";
-	case FbxNodeAttribute::eNurbs: return "nurbs";
-	case FbxNodeAttribute::ePatch: return "patch";
-	case FbxNodeAttribute::eCamera: return "camera";
-	case FbxNodeAttribute::eCameraStereo: return "stereo";
-	case FbxNodeAttribute::eCameraSwitcher: return "camera switcher";
-	case FbxNodeAttribute::eLight: return "light";
-	case FbxNodeAttribute::eOpticalReference: return "optical reference";
-	case FbxNodeAttribute::eOpticalMarker: return "marker";
-	case FbxNodeAttribute::eNurbsCurve: return "nurbs curve";
-	case FbxNodeAttribute::eTrimNurbsSurface: return "trim nurbs surface";
-	case FbxNodeAttribute::eBoundary: return "boundary";
-	case FbxNodeAttribute::eNurbsSurface: return "nurbs surface";
-	case FbxNodeAttribute::eShape: return "shape";
-	case FbxNodeAttribute::eLODGroup: return "lodgroup";
-	case FbxNodeAttribute::eSubDiv: return "subdiv";
-	default: return "unknown";
-	}
-}
-
-void ModelManager::PrintAttribute(FbxNodeAttribute* attribute)
-{
-	if (!attribute) return;
-
-	FbxString typeName = GetAttributeTypeName(attribute->GetAttributeType());
-	FbxString attrName = attribute->GetName();
-	PrintTabs();
-	// Note: to retrieve the character array of a FbxString, use its Buffer() method.
-	printf("<attribute type='%s' name='%s'/>\n", typeName.Buffer(), attrName.Buffer());
 }
 
 void ModelManager::ConvertFbxDouble3ToGlmVec3(FbxDouble3 const & fbxVec3, glm::vec3 & floatVector)

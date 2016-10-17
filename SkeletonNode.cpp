@@ -41,15 +41,20 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 		worldTransformation = mat4(1.0f);
 		// Translate, rotate and scale
 		
+		// convert to radian
 		GLfloat rotationX, rotationY, rotationZ;
 		rotationX = localRotate.x;
 		rotationY = localRotate.y;
 		rotationZ = localRotate.z;
 
 		worldTransformation = glm::translate(worldTransformation, localTranslate);
-		worldTransformation = glm::rotate(worldTransformation, rotationZ * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
-		worldTransformation = glm::rotate(worldTransformation, rotationY * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
-		worldTransformation = glm::rotate(worldTransformation, rotationX * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
+		/*worldTransformation = glm::rotate(worldTransformation, rotationZ, vec3(0.0f, 0.0f, 1.0f));
+		worldTransformation = glm::rotate(worldTransformation, rotationY, vec3(0.0f, 1.0f, 0.0f));
+		worldTransformation = glm::rotate(worldTransformation, rotationX, vec3(1.0f, 0.0f, 0.0f));*/
+		Quaternion rotationQuat(localRotate);
+		rotationQuat.Normalize();
+		mat4 rotationMatrix = rotationQuat.RotationMatrix();
+		worldTransformation = worldTransformation * rotationMatrix;
 		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
 
 		// Get parent transform matrix and concat with my current one to find its place in world coords
@@ -84,7 +89,7 @@ SkeletonNode* SkeletonNode::AddSkeletonNode(vec3 translate, vec3 rotate, vec3 sc
 {
 	SkeletonNode* node = new SkeletonNode();
 	node->localTranslate = translate;
-	node->localRotate = rotate;
+	node->localRotate = rotate * angleMultiplication; // Convert to radian
 	node->localScale = scale * SCALING_FACTOR;
 	node->SetMeshType(meshType);
 	node->parent = this;
