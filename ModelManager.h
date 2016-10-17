@@ -38,6 +38,7 @@ private:
 	void PrintTabs();
 	void ConvertFbxDouble3ToGlmVec3(FbxDouble3 const & fbxVec3, glm::vec3 & floatVector);
 	void ConvertFbxDouble4ToGlmVec3(FbxVector4 const & fbxVec3, glm::vec3 & floatVector);
+	void FillAnimationTable(SkeletonNode* skeletonNode, FbxNode* node);
 
 	// Singleton things
 	ModelManager();

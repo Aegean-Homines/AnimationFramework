@@ -234,11 +234,6 @@ void GraphicsManager::InitializeData()
 
 	Mesh* lineMesh = new Mesh(vertices, indices, GL_LINES);
 	meshMap.insert(std::pair<MeshType, Mesh*>(LINE, lineMesh));
-
-	node.localTranslate = vec3(0.0f, -10.0f, 0.0f);
-	node.localScale = vec3(1.0f, 20.0f, 1.0f);
-	node.localRotate = vec3(90.0f, 0.0f, 0.0f);
-	node.SetMeshType(CUBE);
 	/*SkeletonNode* visibleroot = node.AddSkeletonNode(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child1");
 	visibleroot->level = 0;
 	SkeletonNode* visible2 = visibleroot->AddSkeletonNode(vec3(0.0f, -6.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child2");

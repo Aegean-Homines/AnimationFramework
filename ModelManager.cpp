@@ -66,20 +66,9 @@ void ModelManager::PrintTree()
 
 void ModelManager::PrintAnimationStacks()
 {
-
-
-
 	int count = fbxScene->GetSrcObjectCount<FbxAnimStack>();
 	for (int i = 0; i < count; ++i) {
 		FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(i);
-		FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
-		takeInfo->mLocalTimeSpan.GetStart();
-		FbxTime start = takeInfo->mLocalTimeSpan.GetStart();
-		FbxTime end = takeInfo->mLocalTimeSpan.GetStop();
-		FbxLongLong frameCount = end.GetFrameCount(FbxTime::eFrames60) - start.GetFrameCount(FbxTime::eFrames60) + 1;
-
-		std::cout << "Anim Stack Name: " << animStack->GetName() << std::endl;
-
 		PrintAnimationStacks(animStack);
 	}
 }
@@ -301,25 +290,11 @@ void ModelManager::InsertNode(FbxNode* fbxNode, SkeletonNode* parent)
 	} 
 	// Get data from fbx
 	const char* nodeName = fbxNode->GetName();
+	SkeletonNode* child = parent->AddSkeletonNode(MeshType::CUBE, nodeName);
 
-
-	FbxDouble3 fbxTranslation = fbxNode->LclTranslation.Get();
-	FbxDouble3 fbxRotation = fbxNode->LclRotation.Get();
-	FbxDouble3 fbxScaling = fbxNode->LclScaling.Get();
-
-	FbxAMatrix& localTransform = fbxNode->EvaluateLocalTransform();
-	FbxVector4 transform = localTransform.GetT();
-	FbxVector4 rotate = localTransform.GetR();
-	FbxVector4 scaling = localTransform.GetS();
-	vec3 translation;
-	ConvertFbxDouble4ToGlmVec3(transform, translation);
-	vec3 rotation;
-	ConvertFbxDouble4ToGlmVec3(rotate, rotation);
-	vec3 scale;
-	ConvertFbxDouble4ToGlmVec3(scaling, scale);
-
-	// Add a new node to the parent
-	SkeletonNode* child = parent->AddSkeletonNode(translation, rotation, scale, MeshType::CUBE, nodeName);
+	// Fill animation table of the child with time-animation pairs
+	FillAnimationTable(child, fbxNode);
+	
 	child->level = counter;
 
 	counter++;
@@ -352,4 +327,33 @@ void ModelManager::ConvertFbxDouble4ToGlmVec3(FbxVector4 const & fbxVec4, glm::v
 	floatVector[0] = static_cast<float>(fbxVec4[0]);
 	floatVector[1] = static_cast<float>(fbxVec4[1]);
 	floatVector[2] = static_cast<float>(fbxVec4[2]);
+}
+
+void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxNode* fbxNode)
+{
+	// Assuming we have only one stack and layer in the model
+	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
+	FbxTimeSpan localSpan = animStack->GetLocalTimeSpan();
+	FbxAnimLayer* layer = animStack->GetMember<FbxAnimLayer>(0);
+	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
+	FbxTime durationTime = takeInfo->mLocalTimeSpan.GetDuration();
+	double duration = takeInfo->mLocalTimeSpan.GetDuration().GetSecondDouble();
+	double framerate = durationTime.GetFrameRate(FbxTime::eFrames60);
+	double mux = duration * framerate;
+	int frametime = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FbxTime::eFrames60);
+
+	FbxDouble3 translation = fbxNode->LclTranslation.Get();
+	FbxDouble3 rotation = fbxNode->LclRotation.Get();
+	FbxDouble3 scaling = fbxNode->LclScaling.Get();
+
+	FbxAMatrix transformByHand;
+	transformByHand.SetT(translation);
+	transformByHand.SetR(rotation);
+	transformByHand.SetS(scaling);
+	for (int i = 0; i < frametime; ++i) {
+		FbxTime frameTime;
+		frameTime.SetFrame(i);
+		FbxAMatrix transform = fbxNode->EvaluateLocalTransform(frameTime);
+	}
+	
 }
