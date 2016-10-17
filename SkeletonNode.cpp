@@ -16,6 +16,10 @@
 
 const float angleMultiplication = (PI / 180.0f);
 
+int SkeletonNode::frame = 0;
+
+int SkeletonNode::maxFrame;
+
 SkeletonNode::SkeletonNode(std::string const & nodeName): nodeName(nodeName)
 {
 	level = 0;
@@ -38,28 +42,42 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 	if (parent != NULL) {
 		Mesh* myMesh = GraphicsManager::GetMesh(meshType);
 
+		FbxAMatrix fbxTransform = transformationMap[frame];
 		// Reset matrix to identity
 		worldTransformation = mat4(1.0f);
-		/*
+		
+		FbxDouble3 fbxTranslate, fbxRotate;
+		fbxTranslate = fbxTransform.GetT();
+		fbxRotate = fbxTransform.GetR() * angleMultiplication;
 		// Translate, rotate and scale
 		GLfloat rotationX, rotationY, rotationZ;
-		rotationX = localRotate.x;
-		rotationY = localRotate.y;
-		rotationZ = localRotate.z;
+		GLfloat translateX, translateY, translateZ;
+		rotationX = static_cast<float>(fbxRotate.mData[0]);
+		rotationY = static_cast<float>(fbxRotate.mData[1]);
+		rotationZ = static_cast<float>(fbxRotate.mData[2]);
+		translateX = static_cast<float>(fbxTranslate.mData[0]);
+		translateY = static_cast<float>(fbxTranslate.mData[1]);
+		translateZ = static_cast<float>(fbxTranslate.mData[2]);
+
+		vec3 localTranslate(translateX, translateY, translateZ);
+		vec3 localRotate(rotationX, rotationY, rotationZ);
 
 		worldTransformation = glm::translate(worldTransformation, localTranslate);
 		Quaternion rotationQuat(localRotate);
 		rotationQuat.Normalize();
 		mat4 rotationMatrix = rotationQuat.RotationMatrix();
 		worldTransformation = worldTransformation * rotationMatrix;
-		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));*/
+		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
 
+		/*FbxAMatrix fbxTransform = transformationMap[frame];
+		for (int i = 0; i < 4; ++i)
+			for (int j = 0; j < 4; ++j)
+				worldTransformation[i][j] = fbxTransform[i][j];*/
+
+		//worldTransformation = transformationMap[frame];
 		// Get parent transform matrix and concat with my current one to find its place in world coords
-		if (parent != NULL) {
-			mat4 & parentTransform = parent->worldTransformation;
-			worldTransformation = parentTransform * worldTransformation;
-		}
-
+		mat4 & parentTransform = parent->worldTransformation;
+		worldTransformation = parentTransform * worldTransformation;
 
 		GLint transformLocation = glGetUniformLocation(program.program, "Transform");
 		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
@@ -68,6 +86,9 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 
 		// Draw lines between points
 		DrawLinesBetweenNodes(program);
+	}
+	else {
+		frame = frame++ % maxFrame;
 	}
 
 	for (unsigned int i = 0; i < children.size(); ++i) {
@@ -97,7 +118,7 @@ SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const
 	return node;
 }
 
-void SkeletonNode::Insert(int keyFrameTime, mat4 transformation)
+void SkeletonNode::Insert(int keyFrameTime, FbxAMatrix transformation)
 {
 	transformationMap[keyFrameTime] = transformation;
 }

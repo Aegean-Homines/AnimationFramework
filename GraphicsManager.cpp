@@ -104,7 +104,7 @@ void GraphicsManager::Render()
 void GraphicsManager::Update()
 {
 	// Toggle debug mode
-	if (EventManager::IsKeyPressed(GLFW_KEY_N)) {
+	if (EventManager::IsKeyTriggered(GLFW_KEY_N)) {
 		isWireframeModeOn = !isWireframeModeOn;
 	}
 

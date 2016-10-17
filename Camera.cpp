@@ -4,6 +4,8 @@
 #include <gtc\matrix_transform.hpp>
 #include <glfw3.h>
 
+#include <iostream>
+
 #define CAMERA_SPEED 5.0f
 #define MOUSE_SENSITIVITY 0.10f
 
@@ -22,7 +24,6 @@ Camera::~Camera()
 
 mat4 Camera::GetViewMatrix()
 {
-
 	return glm::lookAt(cameraPosition, cameraPosition + cameraFront, up);
 }
 

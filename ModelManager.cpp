@@ -2,6 +2,8 @@
 #include "SkeletonNode.h"
 #include <iostream>
 
+#define FRAME_RATE_MODE FbxTime::eDefaultMode
+
 using std::cout;
 using std::endl;
 
@@ -242,6 +244,9 @@ void ModelManager::CreateTree()
 {
 	fbxRootNode = fbxScene->GetRootNode();
 	RootNode(new SkeletonNode());
+	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
+	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
+	SkeletonNode::maxFrame = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE);
 	counter = 0;
 	if (fbxRootNode) {
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
@@ -338,22 +343,22 @@ void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxNode* fbxNo
 	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
 	FbxTime durationTime = takeInfo->mLocalTimeSpan.GetDuration();
 	double duration = takeInfo->mLocalTimeSpan.GetDuration().GetSecondDouble();
-	double framerate = durationTime.GetFrameRate(FbxTime::eFrames60);
+	double framerate = durationTime.GetFrameRate(FRAME_RATE_MODE);
 	double mux = duration * framerate;
-	int frametime = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FbxTime::eFrames60);
+	int frametime = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE);
 
-	FbxDouble3 translation = fbxNode->LclTranslation.Get();
-	FbxDouble3 rotation = fbxNode->LclRotation.Get();
-	FbxDouble3 scaling = fbxNode->LclScaling.Get();
-
-	FbxAMatrix transformByHand;
-	transformByHand.SetT(translation);
-	transformByHand.SetR(rotation);
-	transformByHand.SetS(scaling);
-	for (int i = 0; i < frametime; ++i) {
+	for (int i = 0; i <= frametime; ++i) {
 		FbxTime frameTime;
 		frameTime.SetFrame(i);
 		FbxAMatrix transform = fbxNode->EvaluateLocalTransform(frameTime);
+		mat4 glTransform;
+		/*for (int j = 0; j < 4; ++j) {
+			for (int k = 0; k < 4; ++k) {
+				glTransform[j][k] = transform[j][k];
+			}
+		}*/
+
+		skeletonNode->Insert(i, transform);
 	}
 	
 }

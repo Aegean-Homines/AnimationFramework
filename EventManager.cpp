@@ -6,6 +6,8 @@
 
 vector<bool> EventManager::keys;
 
+vector<bool> EventManager::prevKeys;
+
 double EventManager::mouseDeltaX;
 double EventManager::mouseDeltaY;
 double EventManager::lastX;
@@ -24,6 +26,7 @@ EventManager::~EventManager()
 void EventManager::UpdateEvents()
 {
 	mouseDeltaX = mouseDeltaY = 0;
+	prevKeys = keys;
 	glfwPollEvents();
 }
 
@@ -33,6 +36,7 @@ void EventManager::InitializeEvents()
 	glfwSetCursorPosCallback(WindowManager::GetWindow(), &EventManager::MouseEventCallback);
 	glfwSetMouseButtonCallback(WindowManager::GetWindow(), &EventManager::MouseButtonEventCallback);
 	keys.resize(GLFW_KEY_LAST, false);
+	prevKeys.resize(GLFW_KEY_LAST, false);
 
 	mouseDeltaX = 0.0f;
 	mouseDeltaY = 0.0f;
@@ -50,6 +54,11 @@ bool EventManager::IsKeyPressed(int key)
 bool EventManager::IsKeyReleased(int key)
 {
 	return !keys[key];
+}
+
+bool EventManager::IsKeyTriggered(int key)
+{
+	return (keys[key] && !prevKeys[key]);
 }
 
 void EventManager::KeyboardEventCallback(GLFWwindow* window, int key, int scancode, int action, int mode)

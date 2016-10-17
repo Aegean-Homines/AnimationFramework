@@ -6,6 +6,8 @@
 #include "Types.h"
 #include "ShaderProgram.h"
 
+#include <fbxsdk.h>
+
 using glm::vec3;
 using glm::mat4;
 using std::vector;
@@ -14,8 +16,10 @@ using std::unordered_map;
 class SkeletonNode
 {
 public:
-	typedef unordered_map<int, mat4> AnimationTransformationMap;
+	typedef unordered_map<int, FbxAMatrix> AnimationTransformationMap;
 
+	static int frame;
+	static int maxFrame;
 	SkeletonNode(std::string const & nodeName = "");
 	~SkeletonNode();
 	
@@ -30,7 +34,7 @@ public:
 	SkeletonNode* Parent() const { return parent; }
 	void Parent(SkeletonNode* newParent) { parent = newParent; }
 
-	void Insert(int keyFrameTime, mat4 transformation);
+	void Insert(int keyFrameTime, FbxAMatrix transformation);
 
 	// Not object oriented and I'm not happy with this as well but it clutters up the entire code when I had all getters and setters
 	// So this is a reminder to myself: this is a one-shot framework for a small project

@@ -23,6 +23,7 @@ void EngineHelper::InitializeGLFW(unsigned int openGLMajorVersion, unsigned int 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, openGLMinorVersion);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, isResizable);
+	glfwWindowHint(GLFW_REFRESH_RATE, 60);
 }
 
 void EngineHelper::InitializeGlew()
@@ -38,12 +39,17 @@ void EngineHelper::Update()
 {
 	while (!glfwWindowShouldClose(WindowManager::GetWindow())) {
 		double currentFrame = glfwGetTime();
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
 		EventManager::UpdateEvents();
 		WindowManager::Update();
 		GraphicsManager::Update();
 		GraphicsManager::Render();
+
+		do
+		{
+			lastFrame = glfwGetTime();
+		} while (lastFrame - currentFrame < (1.0f / 60.0f));
+
+		deltaTime = lastFrame - currentFrame;
 	}
 }
 

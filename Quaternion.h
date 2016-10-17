@@ -91,6 +91,15 @@ public:
 	}
 
 	// #TODO LERP, SLERP ETC
+	static Quaternion Slerp(Quaternion const & q1, Quaternion const & q2, float t) {
+		Quaternion retVal;
+		float dot = Quaternion::Dot(q1, q2);
+
+		float angle = acosf(dot);
+		float sin1 = sinf(angle*(1 - t));
+		float sin2 = sinf(angle * t);
+		return ((q1 * sin1 + q2 * sin2) / sinf(angle));
+	}
 
 };
 
