@@ -5,6 +5,7 @@
 using glm::vec3;
 using glm::mat4;
 
+// Simple use camera class
 class Camera
 {
 public:
@@ -22,6 +23,7 @@ private:
 	vec3 cameraPosition;
 	vec3 cameraTarget;
 	vec3 cameraFront;
+	vec3 initialCameraPosition;
 
 	float yaw, pitch;
 };

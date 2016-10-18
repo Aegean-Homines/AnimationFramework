@@ -11,6 +11,7 @@
 
 typedef std::unordered_map<MeshType, Mesh*> MeshMap;
 
+// Simple graphics manager
 class GraphicsManager
 {
 public:

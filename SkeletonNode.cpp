@@ -31,62 +31,30 @@ SkeletonNode::~SkeletonNode()
 
 void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpolationAmount)
 {
+	// I'm using these in case I want to debug something
+	/* 
 	bool j, k, l;
 	j = EventManager::IsKeyPressed(GLFW_KEY_J);
 	k = EventManager::IsKeyPressed(GLFW_KEY_K);
-	l = EventManager::IsKeyPressed(GLFW_KEY_L);
+	l = EventManager::IsKeyPressed(GLFW_KEY_L);*/
 
 	if (parent != NULL) {
 		Mesh* myMesh = GraphicsManager::GetMesh(meshType);
 			 
-		FbxAMatrix& fbxTransform = transformationMap[frame];
-		FbxAMatrix& fbxTransformNext = transformationMap[frame+1];
-		// Reset matrix to identity
-		worldTransformation = mat4(1.0f);
-		
-		// Get current translation values
-		FbxDouble3 fbxTranslate, fbxRotate;
-		fbxTranslate = fbxTransform.GetT();
-		fbxRotate = fbxTransform.GetR();
-		vec3 currentTranslate, nextTranslate, finalTranslate;
-		vec3 currentRotation, nextRotation;
+		VQS& currentVQS = transformationMap[frame];
+		VQS& nextVQS = transformationMap[frame + 1];
 
-		// Convert current values
-		FbxDouble3ToVec3(fbxTranslate, currentTranslate);
-		FbxDouble3ToVec3(fbxRotate, currentRotation);
+		transformVQS = VQS::Slerp(currentVQS, nextVQS, interpolationAmount);
 
-		// Get previous frame's values
-		fbxTranslate = fbxTransformNext.GetT();
-		fbxRotate = fbxTransformNext.GetR();
+		// Get parent transform VQS and concat with my current one to find its place in world coords
+		VQS& parentTransform = parent->transformVQS;
+		transformVQS = parentTransform * transformVQS;
 
-		// convert prevous values
-		FbxDouble3ToVec3(fbxTranslate, nextTranslate);
-		FbxDouble3ToVec3(fbxRotate, nextRotation);
+		// Get matrix data from VQS to find node's final position in world coords
+		mat4 worldTransformation(1.0f);
+		worldTransformation = glm::translate(worldTransformation, transformVQS.translate);
 
-		// Interpolate translate
-		finalTranslate = (1.0f - interpolationAmount) * currentTranslate + interpolationAmount * nextTranslate;
-
-		// Rotation to quaternion
-		Quaternion currentRotationQuat(currentRotation * angleMultiplication);
-		Quaternion nextRotationQuat(nextRotation * angleMultiplication);
-
-		Quaternion finalRotation = Quaternion::Slerp(currentRotationQuat, nextRotationQuat, interpolationAmount);
-		finalRotation.Normalize();
-		worldTransformation = glm::translate(worldTransformation, finalTranslate);
-		mat4 rotationMatrix = finalRotation.RotationMatrix();
-		worldTransformation = worldTransformation * rotationMatrix;
-		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
-
-		/*FbxAMatrix fbxTransform = transformationMap[frame];
-		for (int i = 0; i < 4; ++i)
-			for (int j = 0; j < 4; ++j)
-				worldTransformation[i][j] = fbxTransform[i][j];*/
-
-		//worldTransformation = transformationMap[frame];
-		// Get parent transform matrix and concat with my current one to find its place in world coords
-		mat4 & parentTransform = parent->worldTransformation;
-		worldTransformation = parentTransform * worldTransformation;
-
+		// Send matrix to the GPU for rendering purposes
 		GLint transformLocation = glGetUniformLocation(program.program, "Transform");
 		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
 
@@ -96,6 +64,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpol
 		DrawLinesBetweenNodes(program);
 	}
 
+	// Recursively call draw for all the children of this node
 	for (unsigned int i = 0; i < children.size(); ++i) {
 		children[i]->Draw(program, frame, interpolationAmount);
 	}
@@ -111,9 +80,6 @@ void SkeletonNode::AddSkeletonNode(SkeletonNode* child)
 SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const & nodeName /*= ""*/)
 {
 	SkeletonNode* node = new SkeletonNode();
-	/*node->localTranslate = translate;
-	node->localRotate = rotate * angleMultiplication; // Convert to radian
-	node->localScale = scale * SCALING_FACTOR;*/
 	node->SetMeshType(meshType);
 	node->parent = this;
 	node->nodeName = nodeName;
@@ -123,23 +89,16 @@ SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const
 	return node;
 }
 
-void SkeletonNode::Insert(int keyFrameTime, FbxAMatrix transformation)
+void SkeletonNode::Insert(int keyFrameTime, VQS transformation)
 {
 	transformationMap[keyFrameTime] = transformation;
-}
-
-
-void SkeletonNode::ResetTransformMatrix()
-{
-	memset(&worldTransformation[0][0], 0, 16 * sizeof(float));
-	worldTransformation[0][0] = worldTransformation[1][1] = worldTransformation[2][2]= worldTransformation[3][3] = 1.0f;
 }
 
 void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 {
 
 	// for some weird thing between root and its children
-	// remove this after figuring out a cleaner way of handling it
+	// #TODO remove this after figuring out a cleaner way of handling it
 	if (parent == NULL || parent->parent == NULL)
 		return;
 
@@ -151,9 +110,11 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(identityMatrix[0][0]));
 
 	// Get parent's transform value
-	mat4 & parentTransform = parent->worldTransformation;
-
+	mat4 parentTransform = glm::translate(mat4(1.0f), parent->transformVQS.translate);
+	mat4 worldTransformation = glm::translate(mat4(1.0f), transformVQS.translate);
 	// We'll buffer position values of this node and it's parent to draw a line between them
+	// I feel dirty for using graphics hacks to get stuff drawn. I'm pretty sure there is a better way
+	// But you know, #YOLO
 	std::vector<Vertex> newVertices;
 	vec3 parentTranslate = vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]);
 	vec3 myTranslate = vec3(worldTransformation[3][0], worldTransformation[3][1], worldTransformation[3][2]);
@@ -163,11 +124,4 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 	// Finally buffer new vertices and draw the lines
 	myMesh->BufferNewData(newVertices);
 	myMesh->Draw(program);
-}
-
-void SkeletonNode::FbxDouble3ToVec3(FbxDouble3 const & fbxVector, vec3 & glmVec)
-{
-	glmVec[0] = static_cast<float>(fbxVector[0]);
-	glmVec[1] = static_cast<float>(fbxVector[1]);
-	glmVec[2] = static_cast<float>(fbxVector[2]);
 }

@@ -16,6 +16,8 @@ Camera::Camera(vec3 cameraPosition /*= vec3(0.0f, 0.0f, 0.0f)*/, vec3 cameraTarg
 {
 	yaw = -90.0f;
 	pitch = 0.0f;
+
+	initialCameraPosition = cameraPosition;
 }
 
 Camera::~Camera()
@@ -45,6 +47,12 @@ void Camera::Update()
 		cameraPosition -= glm::normalize(glm::cross(cameraFront, up)) * cameraSpeed;
 	if (EventManager::IsKeyPressed(GLFW_KEY_D))
 		cameraPosition += glm::normalize(glm::cross(cameraFront, up)) * cameraSpeed;
+	if (EventManager::IsKeyPressed(GLFW_KEY_Q))
+		cameraPosition += cameraSpeed * up;
+	if (EventManager::IsKeyPressed(GLFW_KEY_E))
+		cameraPosition -= cameraSpeed * up;
+	if (EventManager::IsKeyTriggered(GLFW_KEY_R))
+		cameraPosition = initialCameraPosition;
 
 	// rotation
 	if (EventManager::IsMouseButtonPressed(RIGHT)) {

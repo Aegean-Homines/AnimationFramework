@@ -5,8 +5,7 @@
 #include <unordered_map>
 #include "Types.h"
 #include "ShaderProgram.h"
-
-#include <fbxsdk.h>
+#include "VQS.h"
 
 using glm::vec3;
 using glm::mat4;
@@ -16,9 +15,8 @@ using std::unordered_map;
 class SkeletonNode
 {
 public:
-	typedef unordered_map<int, FbxAMatrix> AnimationTransformationMap;
+	typedef unordered_map<int, VQS> AnimationTransformationMap;
 
-	static int frame;
 	SkeletonNode(std::string const & nodeName = "");
 	~SkeletonNode();
 	
@@ -33,13 +31,13 @@ public:
 	SkeletonNode* Parent() const { return parent; }
 	void Parent(SkeletonNode* newParent) { parent = newParent; }
 
-	void Insert(int keyFrameTime, FbxAMatrix transformation);
+	void Insert(int keyFrameTime, VQS transformation);
 
 	// Not object oriented and I'm not happy with this as well but it clutters up the entire code when I had all getters and setters
 	// So this is a reminder to myself: this is a one-shot framework for a small project
 	// Code doesn't have to be beautiful and elegant - it needs to be written fast
 	// Deal with it.
-	mat4 worldTransformation;
+	VQS transformVQS;
 	int level;
 private:
 	// DATA
@@ -49,11 +47,7 @@ private:
 	std::string nodeName;
 	AnimationTransformationMap transformationMap;
 	// HELPER METHODS
-	void ResetTransformMatrix();
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
-	void FbxDouble3ToVec3(FbxDouble3 const & fbxVector, vec3 & glmVec);
-
-
 
 };
 

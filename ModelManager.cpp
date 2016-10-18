@@ -1,11 +1,15 @@
 #include "ModelManager.h"
 #include "SkeletonNode.h"
+#include "VQS.h"
 #include <iostream>
 
 #define FRAME_RATE_MODE FbxTime::eDefaultMode
+#define PI 3.14159265359f
 
 using std::cout;
 using std::endl;
+
+const float angleMultiplication = (PI / 180.0f);
 
 ModelManager::ModelManager()
 {
@@ -187,25 +191,6 @@ void ModelManager::DisplayCurveKeys(FbxAnimCurve* curve)
 		lOutputString += lKeyTime.GetTimeString(lTimeString, FbxUShort(256));
 		lOutputString += ".... Key Value: ";
 		lOutputString += lKeyValue;
-		/*lOutputString += " [ ";
-		lOutputString += interpolation[InterpolationFlagToIndex(curve->KeyGetInterpolation(lCount))];
-		if ((curve->KeyGetInterpolation(lCount)&FbxAnimCurveDef::eInterpolationConstant) == FbxAnimCurveDef::eInterpolationConstant)
-		{
-			lOutputString += " | ";
-			lOutputString += constantMode[ConstantmodeFlagToIndex(curve->KeyGetConstantMode(lCount))];
-		}
-		else if ((curve->KeyGetInterpolation(lCount)&FbxAnimCurveDef::eInterpolationCubic) == FbxAnimCurveDef::eInterpolationCubic)
-		{
-			lOutputString += " | ";
-			lOutputString += cubicMode[TangentmodeFlagToIndex(curve->KeyGetTangentMode(lCount))];
-			lOutputString += " | ";
-			lOutputString += tangentWVMode[TangentweightFlagToIndex(curve->KeyGet(lCount).GetTangentWeightMode())];
-			lOutputString += " | ";
-			lOutputString += tangentWVMode[TangentVelocityFlagToIndex(curve->KeyGet(lCount).GetTangentVelocityMode())];
-		}
-		lOutputString += " ]";
-		lOutputString += "\n";*/
-		//FBXSDK_printf(lOutputString);
 		std::cout << lOutputString.Buffer() << std::endl;
 	}
 }
@@ -334,28 +319,36 @@ void ModelManager::ConvertFbxDouble4ToGlmVec3(FbxVector4 const & fbxVec4, glm::v
 void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxNode* fbxNode)
 {
 	// Assuming we have only one stack and layer in the model
+	// I can actually send these from the root node but at this point
+	// I think I just don't care as long as I have an animation on the screen
 	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
 	FbxTimeSpan localSpan = animStack->GetLocalTimeSpan();
 	FbxAnimLayer* layer = animStack->GetMember<FbxAnimLayer>(0);
 	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
-	FbxTime durationTime = takeInfo->mLocalTimeSpan.GetDuration();
-	double duration = takeInfo->mLocalTimeSpan.GetDuration().GetSecondDouble();
-	double framerate = durationTime.GetFrameRate(FRAME_RATE_MODE);
-	double mux = duration * framerate;
-	int frametime = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE);
+	int frametime = static_cast<int>(takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE));
 
 	for (int i = 0; i <= frametime; ++i) {
 		FbxTime frameTime;
 		frameTime.SetFrame(i);
-		FbxAMatrix transform = fbxNode->EvaluateLocalTransform(frameTime);
-		mat4 glTransform;
-		/*for (int j = 0; j < 4; ++j) {
-			for (int k = 0; k < 4; ++k) {
-				glTransform[j][k] = transform[j][k];
-			}
-		}*/
 
-		skeletonNode->Insert(i, transform);
+		// We can get the resulting transform matrix directly from the fbx file
+		FbxAMatrix transform = fbxNode->EvaluateLocalTransform(frameTime);
+
+		// Get current translation values
+		FbxDouble3 fbxTranslate, fbxRotate;
+		fbxTranslate = transform.GetT();
+		fbxRotate = transform.GetR();
+
+		// Convert fbx vector to our belowed glm vectors
+		vec3 translate, rotate;
+		ConvertFbxDouble3ToGlmVec3(fbxTranslate, translate);
+		ConvertFbxDouble3ToGlmVec3(fbxRotate, rotate);
+
+		// Rotation to quaternion
+		Quaternion rotationQuat(rotate * angleMultiplication);
+
+		// Create a VQS for that frame and store it in the map
+		skeletonNode->Insert(i, VQS(translate, rotationQuat));
 	}
 	
 }

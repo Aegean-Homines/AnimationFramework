@@ -14,10 +14,15 @@ private:
 	vec3 imaginary;
 public:
 	// Constructors
+	// Default version, for unit Quaternion
 	Quaternion(float scalar = 1.0f, float x = 0.0f, float y = 0.0f, float z = 0.0f);
+	// Create Quaternion from euler angles
 	Quaternion(vec3  const & rotationEulerVector);
+	// Create Quaternion from vec4(scalar, imaginary)
 	Quaternion(vec4 const & quaternionData);
+	// Create Quaternion from scalar and vec3(imaginary)
 	Quaternion(float scalar, vec3 const & imaginaryVector);
+	// Create Quaternion from angle-axis 
 	Quaternion(vec3 const & unitAxis, float angle);
 
 	// Getter & Setters
@@ -32,7 +37,7 @@ public:
 	void Imaginary(vec3 const & imaginaryVector);
 	vec3 Imaginary() const;
 
-	// ASSIGNMENT OPERATIONS
+	// ASSIGNMENT OPERATION
 	Quaternion &operator=(Quaternion const & q);
 
 	// ARITHMETIC OPERATIONS
@@ -44,15 +49,16 @@ public:
 	Quaternion operator*(Quaternion const & rhs) const;
 	Quaternion operator+(Quaternion const & rhs) const;
 	Quaternion operator-(Quaternion const & rhs) const;
+
+	// UNARY NEGATE
 	Quaternion operator-() const;
 
-
-	// QUATERNION - MATRIX
+	// QUATERNION - MATRIX TRANSFORMATIONS
 	mat4 MatrixForm() const; //matrix * rhs.vector = this * q
 	mat4 MatrixFormForRightMux() const; //rhs.vector.trans * matrix = q * vector.transpose
 	mat4 RotationMatrix() const;
 
-	// QUATERNION - VECTOR
+	// QUATERNION - VECTOR TRANSFORMATIONS
 	vec4 VectorForm() const; //(x,y,z,w)
 	vec3 RotatedVectorForm(vec3  const & rotationVector) const; //q * q(0,v) * q.Inverse()
 	vec3 EulerForm() const;
@@ -74,6 +80,7 @@ public:
 		return sqrt(length);
 	}
 
+	// Square length of a quaternion
 	static inline float LengthSquared(Quaternion const & q) {
 		float length = q.scalar * q.scalar + q.imaginary.x * q.imaginary.x + q.imaginary.y * q.imaginary.y + q.imaginary.z * q.imaginary.z;
 		return length;
@@ -94,7 +101,8 @@ public:
 		return q * (1 / Quaternion::Length(q));
 	}
 
-	// #TODO LERP, SLERP ETC
+	// Slerp for Quaternion Interpolation
+	// Based on the algorithm used in Will Perone's website
 	static Quaternion Slerp(Quaternion const & q1, Quaternion const & q2, float t) {
 		Quaternion q3 = q2;
 		float dot = Quaternion::Dot(q1, q2);
@@ -104,7 +112,6 @@ public:
 			dot = -dot;
 			q3 = -q2;
 		}
-		else q3 = q2;
 
 		if (dot < 0.95f)
 		{
@@ -112,11 +119,13 @@ public:
 			return (q1*sinf(angle*(1 - t)) + q3*sinf(angle*t)) / sinf(angle);
 		}
 		else // if the angle is small, use linear interpolation								
-			return lerp(q1, q3, t);
+			return Lerp(q1, q3, t);
 
 	}
 
-	static Quaternion lerp(const Quaternion &q1, const Quaternion &q2, float t)
+	// Linear Interpolation for quaternion (used when the angle is too narrow)
+	// Based on the algorithm used in Will Perone's website
+	static Quaternion Lerp(const Quaternion &q1, const Quaternion &q2, float t)
 	{
 		Quaternion q3 = (q1*(1 - t) + q2*t);
 		q3.Normalize();

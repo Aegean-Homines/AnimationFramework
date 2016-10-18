@@ -222,7 +222,7 @@ vec3 Quaternion::RotatedVectorForm(vec3 const & rotationVector) const
 	return ((*this) * pureQuaternion * conjugateQuaternion).Imaginary();
 }
 
-// From Standford Quaternion Header file
+// Taken From Standford Quaternion Header file
 vec3 Quaternion::EulerForm() const
 {
 	vec3 euler;
@@ -254,6 +254,7 @@ vec3 Quaternion::EulerForm() const
 	return euler;
 }
 
+// Based on the algorithm used in Will Perone's website
 Quaternion Quaternion::Log() const
 {
 	float arcCosScalar = acos(Scalar());
@@ -274,6 +275,7 @@ Quaternion Quaternion::Log() const
 	return returnValue;
 }
 
+// Based on the algorithm used in Will Perone's website
 Quaternion Quaternion::Exp() const
 {
 	float lengthOfImaginary = glm::length(Imaginary());

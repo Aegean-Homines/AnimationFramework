@@ -11,6 +11,7 @@
 
 #include <iostream>
 
+#define FRAME_SPEED 15.0f
 #define CUBE_SCALE 0.03f
 #define PI 3.14159265359f
 const float angleMultiplication = (PI / 180.0f);
@@ -34,7 +35,7 @@ double GraphicsManager::animationStartingTime;
 int GraphicsManager::width;
 int GraphicsManager::height;
 MeshMap GraphicsManager::meshMap;
-Camera GraphicsManager::camera;
+Camera GraphicsManager::camera(vec3(-1.0f, 3.0f, 5.5f), vec3(0.0f, 0.0f, 0.0f));
 
 SkeletonNode GraphicsManager::node;
 
@@ -105,8 +106,15 @@ void GraphicsManager::Render()
 	SkeletonNode* rootNode = modelManager->RootNode();
 
 	double elapseTime = glfwGetTime() - animationStartingTime;
-	elapseTime *= 10.0f;
+	elapseTime *= FRAME_SPEED;
+
+	// Yet another hack
+	// We can actually get this value from ModelManager but I know that Tad has 95
+	// So #TODO get this from the Model Manager
 	int size = 95;
+
+	// Used for extending the animation frame to multiple frames
+	// Removing this makes it go like a blue hedgehog
 	int frame = (int)(floor(elapseTime)) % size;
 	float interpolationAmount = elapseTime - floor(elapseTime);
 
@@ -251,16 +259,14 @@ void GraphicsManager::InitializeData()
 
 	Mesh* lineMesh = new Mesh(vertices, indices, GL_LINES);
 	meshMap.insert(std::pair<MeshType, Mesh*>(LINE, lineMesh));
+
+	// WON'T BE USED, just to debug to test skeleton hierarchy and calls
 	/*SkeletonNode* visibleroot = node.AddSkeletonNode(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child1");
 	visibleroot->level = 0;
 	SkeletonNode* visible2 = visibleroot->AddSkeletonNode(vec3(0.0f, -6.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child2");
 	visible2->level = 1;
 	visibleroot->AddSkeletonNode(vec3(3.0f, -6.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.0f), CUBE, "Child3")->level = 1;
 	visible2->AddSkeletonNode(vec3(0.0f, -9.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.0f), CUBE, "Child4")->level = 2;*/
-
-	// Set Camera
-	camera.CameraPosition(vec3(-1.0f, 3.0f, 5.0f));
-	camera.CameraTarget(vec3(0.0f, 0.0f, 0.0f));
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)
