@@ -45,6 +45,8 @@ private:
 	static MeshMap meshMap;
 
 	static int width, height;
+
+	static float animationSpeed;
 	static Camera camera;
 
 	static SkeletonNode node;

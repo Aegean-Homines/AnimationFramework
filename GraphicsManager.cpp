@@ -11,7 +11,6 @@
 
 #include <iostream>
 
-#define FRAME_SPEED 15.0f
 #define CUBE_SCALE 0.03f
 #define PI 3.14159265359f
 const float angleMultiplication = (PI / 180.0f);
@@ -35,6 +34,9 @@ double GraphicsManager::animationStartingTime;
 int GraphicsManager::width;
 int GraphicsManager::height;
 MeshMap GraphicsManager::meshMap;
+
+float GraphicsManager::animationSpeed = 15.0f;
+
 Camera GraphicsManager::camera(vec3(-1.0f, 3.0f, 5.5f), vec3(0.0f, 0.0f, 0.0f));
 
 SkeletonNode GraphicsManager::node;
@@ -106,7 +108,7 @@ void GraphicsManager::Render()
 	SkeletonNode* rootNode = modelManager->RootNode();
 
 	double elapseTime = glfwGetTime() - animationStartingTime;
-	elapseTime *= FRAME_SPEED;
+	elapseTime *= animationSpeed;
 
 	// Yet another hack
 	// We can actually get this value from ModelManager but I know that Tad has 95
@@ -132,6 +134,11 @@ void GraphicsManager::Update()
 	if (EventManager::IsKeyTriggered(GLFW_KEY_N)) {
 		isWireframeModeOn = !isWireframeModeOn;
 	}
+
+	if (EventManager::IsKeyTriggered(GLFW_KEY_KP_ADD))
+		animationSpeed += 5;
+	if (EventManager::IsKeyTriggered(GLFW_KEY_KP_SUBTRACT))
+		animationSpeed -= 5;
 
 	camera.Update();
 } 
