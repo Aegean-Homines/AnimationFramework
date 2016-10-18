@@ -38,6 +38,9 @@ private:
 	static VAO vao;
 
 	static bool isWireframeModeOn;
+	static bool isAnimating;
+	static double animationStartingTime;
+
 	static MeshMap meshMap;
 
 	static int width, height;

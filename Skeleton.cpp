@@ -24,9 +24,9 @@ void Skeleton::AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType
 	skeletonNodes.push_back(node);*/
 }
 
-void Skeleton::Draw(ShaderProgram const & program)
+void Skeleton::Draw(ShaderProgram const & program, int frame, float interpolationAmount)
 {
 	for (unsigned int i = 0; i < skeletonNodes.size(); ++i) {
-		skeletonNodes[i]->Draw(program);
+		skeletonNodes[i]->Draw(program, frame, interpolationAmount);
 	}
 }

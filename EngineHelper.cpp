@@ -44,10 +44,11 @@ void EngineHelper::Update()
 		GraphicsManager::Update();
 		GraphicsManager::Render();
 
-		do
+		lastFrame = glfwGetTime();
+		/*do
 		{
-			lastFrame = glfwGetTime();
-		} while (lastFrame - currentFrame < (1.0f / 60.0f));
+			
+		} while (lastFrame - currentFrame < (1.0f / 60.0f));*/
 
 		deltaTime = lastFrame - currentFrame;
 	}

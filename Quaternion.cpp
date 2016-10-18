@@ -58,6 +58,13 @@ vec3 Quaternion::Imaginary() const
 	return vec3(imaginary);
 }
 
+Quaternion& Quaternion::operator=(Quaternion const & q)
+{
+	scalar = q.scalar;
+	imaginary = q.imaginary;
+	return *this;
+}
+
 Quaternion Quaternion::operator/(float denom)
 {
 	Quaternion resultingQuaternion(Scalar() / denom, Imaginary() / denom);
@@ -97,7 +104,7 @@ Quaternion Quaternion::operator-(Quaternion const & rhs) const
 	return Quaternion(scalar - rhs.scalar, x, y, z);
 }
 
-Quaternion Quaternion::operator-()
+Quaternion Quaternion::operator-() const
 {
 	float x, y, z;
 	x = -imaginary[0];

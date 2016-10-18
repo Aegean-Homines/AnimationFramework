@@ -244,9 +244,6 @@ void ModelManager::CreateTree()
 {
 	fbxRootNode = fbxScene->GetRootNode();
 	RootNode(new SkeletonNode());
-	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
-	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
-	SkeletonNode::maxFrame = takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE);
 	counter = 0;
 	if (fbxRootNode) {
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)

@@ -19,12 +19,11 @@ public:
 	typedef unordered_map<int, FbxAMatrix> AnimationTransformationMap;
 
 	static int frame;
-	static int maxFrame;
 	SkeletonNode(std::string const & nodeName = "");
 	~SkeletonNode();
 	
 	// Methods
-	void Draw(ShaderProgram const & program);
+	void Draw(ShaderProgram const & program, int frame, float interpolationAmount);
 	SkeletonNode* AddSkeletonNode(MeshType meshType, std::string const & nodeName = "");
 	void AddSkeletonNode(SkeletonNode* child);
 	SkeletonNode* GetChild(unsigned int index) { if (index <= children.size()) return children[index]; return NULL; }
@@ -49,11 +48,12 @@ private:
 	SkeletonNode* parent = NULL;
 	std::string nodeName;
 	AnimationTransformationMap transformationMap;
-	int currentFrameTime;
-	int maxFrameTime;
 	// HELPER METHODS
 	void ResetTransformMatrix();
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
+	void FbxDouble3ToVec3(FbxDouble3 const & fbxVector, vec3 & glmVec);
+
+
 
 };
 

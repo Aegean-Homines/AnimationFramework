@@ -32,6 +32,9 @@ public:
 	void Imaginary(vec3 const & imaginaryVector);
 	vec3 Imaginary() const;
 
+	// ASSIGNMENT OPERATIONS
+	Quaternion &operator=(Quaternion const & q);
+
 	// ARITHMETIC OPERATIONS
 	Quaternion operator*(float scalar);
 	Quaternion operator/(float denom);
@@ -41,7 +44,7 @@ public:
 	Quaternion operator*(Quaternion const & rhs) const;
 	Quaternion operator+(Quaternion const & rhs) const;
 	Quaternion operator-(Quaternion const & rhs) const;
-	Quaternion operator-();
+	Quaternion operator-() const;
 
 
 	// QUATERNION - MATRIX
@@ -61,7 +64,8 @@ public:
 	
 	// General Helper Functions
 	static inline float Dot(Quaternion const & q1, Quaternion const & q2) {
-		return (glm::dot(q1.imaginary, q2.imaginary) + q1.scalar * q2.scalar);
+		return ((q1.imaginary.x * q2.imaginary.x + q1.imaginary.y * q2.imaginary.y + q1.imaginary.z * q2.imaginary.z) + q1.scalar * q2.scalar);
+		//return ((glm::dot(q1.imaginary, q2.imaginary)) + q1.scalar * q2.scalar);
 	}
 
 	// Length (or magnitude) of a quaternion
@@ -92,14 +96,31 @@ public:
 
 	// #TODO LERP, SLERP ETC
 	static Quaternion Slerp(Quaternion const & q1, Quaternion const & q2, float t) {
-		Quaternion retVal;
+		Quaternion q3 = q2;
 		float dot = Quaternion::Dot(q1, q2);
 
-		float angle = acosf(dot);
-		float sin1 = sinf(angle*(1 - t));
-		float sin2 = sinf(angle * t);
-		return ((q1 * sin1 + q2 * sin2) / sinf(angle));
+		if (dot < 0)
+		{
+			dot = -dot;
+			q3 = -q2;
+		}
+		else q3 = q2;
+
+		if (dot < 0.95f)
+		{
+			float angle = acosf(dot);
+			return (q1*sinf(angle*(1 - t)) + q3*sinf(angle*t)) / sinf(angle);
+		}
+		else // if the angle is small, use linear interpolation								
+			return lerp(q1, q3, t);
+
 	}
 
+	static Quaternion lerp(const Quaternion &q1, const Quaternion &q2, float t)
+	{
+		Quaternion q3 = (q1*(1 - t) + q2*t);
+		q3.Normalize();
+		return q3;
+	}
 };
 

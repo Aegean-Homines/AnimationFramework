@@ -26,6 +26,11 @@ std::string simpleShaderName = "Simple";
 ShaderProgram GraphicsManager::simpleShader;
 VAO GraphicsManager::vao;
 bool GraphicsManager::isWireframeModeOn = false;
+
+bool GraphicsManager::isAnimating = false;
+
+double GraphicsManager::animationStartingTime;
+
 int GraphicsManager::width;
 int GraphicsManager::height;
 MeshMap GraphicsManager::meshMap;
@@ -73,6 +78,11 @@ void GraphicsManager::Render()
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+	if (!isAnimating) {
+		isAnimating = true;
+		animationStartingTime = glfwGetTime();
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -93,7 +103,14 @@ void GraphicsManager::Render()
 
 	ModelManager* modelManager = ModelManager::Instance();
 	SkeletonNode* rootNode = modelManager->RootNode();
-	rootNode->Draw(simpleShader);
+
+	double elapseTime = glfwGetTime() - animationStartingTime;
+	elapseTime *= 10.0f;
+	int size = 95;
+	int frame = (int)(floor(elapseTime)) % size;
+	float interpolationAmount = elapseTime - floor(elapseTime);
+
+	rootNode->Draw(simpleShader, frame, interpolationAmount);
 
 	//DrawGround(simpleShader);
 	//node.Draw(simpleShader);

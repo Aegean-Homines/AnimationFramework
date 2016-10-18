@@ -4,6 +4,7 @@
 #include "GraphicsManager.h"
 #include "EventManager.h"
 #include "Quaternion.h"
+#include <iostream>
 
 #include <glew.h>
 #include <glfw3.h>
@@ -13,18 +14,14 @@
 
 #define PI 3.14159265359f
 #define SCALING_FACTOR 1.0f
+#define INTERPOLATION_VALUE 0.5f
 
 const float angleMultiplication = (PI / 180.0f);
-
-int SkeletonNode::frame = 0;
-
-int SkeletonNode::maxFrame;
 
 SkeletonNode::SkeletonNode(std::string const & nodeName): nodeName(nodeName)
 {
 	level = 0;
 	meshType = CUBE;
-	currentFrameTime = 0;
 }
 
 
@@ -32,7 +29,7 @@ SkeletonNode::~SkeletonNode()
 {
 }
 
-void SkeletonNode::Draw(ShaderProgram const & program)
+void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpolationAmount)
 {
 	bool j, k, l;
 	j = EventManager::IsKeyPressed(GLFW_KEY_J);
@@ -41,31 +38,42 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 
 	if (parent != NULL) {
 		Mesh* myMesh = GraphicsManager::GetMesh(meshType);
-
-		FbxAMatrix fbxTransform = transformationMap[frame];
+			 
+		FbxAMatrix& fbxTransform = transformationMap[frame];
+		FbxAMatrix& fbxTransformNext = transformationMap[frame+1];
 		// Reset matrix to identity
 		worldTransformation = mat4(1.0f);
 		
+		// Get current translation values
 		FbxDouble3 fbxTranslate, fbxRotate;
 		fbxTranslate = fbxTransform.GetT();
-		fbxRotate = fbxTransform.GetR() * angleMultiplication;
-		// Translate, rotate and scale
-		GLfloat rotationX, rotationY, rotationZ;
-		GLfloat translateX, translateY, translateZ;
-		rotationX = static_cast<float>(fbxRotate.mData[0]);
-		rotationY = static_cast<float>(fbxRotate.mData[1]);
-		rotationZ = static_cast<float>(fbxRotate.mData[2]);
-		translateX = static_cast<float>(fbxTranslate.mData[0]);
-		translateY = static_cast<float>(fbxTranslate.mData[1]);
-		translateZ = static_cast<float>(fbxTranslate.mData[2]);
+		fbxRotate = fbxTransform.GetR();
+		vec3 currentTranslate, nextTranslate, finalTranslate;
+		vec3 currentRotation, nextRotation;
 
-		vec3 localTranslate(translateX, translateY, translateZ);
-		vec3 localRotate(rotationX, rotationY, rotationZ);
+		// Convert current values
+		FbxDouble3ToVec3(fbxTranslate, currentTranslate);
+		FbxDouble3ToVec3(fbxRotate, currentRotation);
 
-		worldTransformation = glm::translate(worldTransformation, localTranslate);
-		Quaternion rotationQuat(localRotate);
-		rotationQuat.Normalize();
-		mat4 rotationMatrix = rotationQuat.RotationMatrix();
+		// Get previous frame's values
+		fbxTranslate = fbxTransformNext.GetT();
+		fbxRotate = fbxTransformNext.GetR();
+
+		// convert prevous values
+		FbxDouble3ToVec3(fbxTranslate, nextTranslate);
+		FbxDouble3ToVec3(fbxRotate, nextRotation);
+
+		// Interpolate translate
+		finalTranslate = (1.0f - interpolationAmount) * currentTranslate + interpolationAmount * nextTranslate;
+
+		// Rotation to quaternion
+		Quaternion currentRotationQuat(currentRotation * angleMultiplication);
+		Quaternion nextRotationQuat(nextRotation * angleMultiplication);
+
+		Quaternion finalRotation = Quaternion::Slerp(currentRotationQuat, nextRotationQuat, interpolationAmount);
+		finalRotation.Normalize();
+		worldTransformation = glm::translate(worldTransformation, finalTranslate);
+		mat4 rotationMatrix = finalRotation.RotationMatrix();
 		worldTransformation = worldTransformation * rotationMatrix;
 		worldTransformation = glm::scale(worldTransformation, vec3(1.0f));
 
@@ -87,12 +95,9 @@ void SkeletonNode::Draw(ShaderProgram const & program)
 		// Draw lines between points
 		DrawLinesBetweenNodes(program);
 	}
-	else {
-		frame = frame++ % maxFrame;
-	}
 
 	for (unsigned int i = 0; i < children.size(); ++i) {
-		children[i]->Draw(program);
+		children[i]->Draw(program, frame, interpolationAmount);
 	}
 
 	
@@ -122,6 +127,7 @@ void SkeletonNode::Insert(int keyFrameTime, FbxAMatrix transformation)
 {
 	transformationMap[keyFrameTime] = transformation;
 }
+
 
 void SkeletonNode::ResetTransformMatrix()
 {
@@ -157,4 +163,11 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 	// Finally buffer new vertices and draw the lines
 	myMesh->BufferNewData(newVertices);
 	myMesh->Draw(program);
+}
+
+void SkeletonNode::FbxDouble3ToVec3(FbxDouble3 const & fbxVector, vec3 & glmVec)
+{
+	glmVec[0] = static_cast<float>(fbxVector[0]);
+	glmVec[1] = static_cast<float>(fbxVector[1]);
+	glmVec[2] = static_cast<float>(fbxVector[2]);
 }

@@ -18,7 +18,7 @@ public:
 	~Skeleton();
 
 	void AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType meshType);
-	void Draw(ShaderProgram const & program);
+	void Draw(ShaderProgram const & program, int frame, float interpolationAmount);
 private:
 	vector<SkeletonNode*> skeletonNodes;
 
