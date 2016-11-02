@@ -1,7 +1,7 @@
 #include "VQS.h"
 
-VQS::VQS(vec3 const & translate, Quaternion const & quaternion):
-	translate(translate), rotate(quaternion), scalar(1.0f)
+VQS::VQS(vec3 const & translate, Quaternion const & quaternion, float scalar):
+	translate(translate), rotate(quaternion), scalar(scalar)
 {}
 
 VQS::VQS()
@@ -36,8 +36,9 @@ VQS VQS::operator*(VQS const & rhs) const
 {
 	vec3 translatePart = *this * rhs.translate;
 	Quaternion quatPart = rotate * rhs.rotate;
+	float scalarPart = scalar * rhs.scalar;
 
-	return VQS(translatePart, quatPart);
+	return VQS(translatePart, quatPart, scalarPart);
 }
 
 vec3 VQS::operator*(vec3 const & translate) const

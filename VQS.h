@@ -9,7 +9,7 @@ class VQS
 public:
 	// Constructors
 	VQS();
-	VQS(vec3 const & translate, Quaternion const & quaternion);
+	VQS(vec3 const & translate, Quaternion const & quaternion, float scalar = 1.0f);
 	~VQS();
 
 	// VQS addition
@@ -32,7 +32,8 @@ public:
 		vec3 finalTranslate = (1.0f - delta) * vqs1.translate + delta * vqs2.translate;
 		Quaternion finalRotate = Quaternion::Slerp(vqs1.rotate, vqs2.rotate, delta);
 		finalRotate.Normalize();
-		return VQS(finalTranslate, finalRotate);
+		float finalScale = pow(vqs2.scalar / vqs1.scalar, delta) * vqs1.scalar;
+		return VQS(finalTranslate, finalRotate, finalScale);
 	}
 
 	//data

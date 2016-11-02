@@ -1,8 +1,22 @@
 #pragma once
 #include <fbxsdk.h>
+#include <unordered_map>
 #include <glm.hpp>
 
 class SkeletonNode;
+
+struct AnimationDefinition {
+	FbxScene* fbxScene;
+	SkeletonNode* rootNode;
+	int animationDurationInFrames;
+
+	AnimationDefinition(FbxScene* fbxScene = nullptr, SkeletonNode* rootNode = nullptr, int animationDurationInFrames = 0)
+		:
+		fbxScene(fbxScene), rootNode(rootNode), animationDurationInFrames(animationDurationInFrames)
+	{}
+};
+
+typedef std::unordered_map<std::string, AnimationDefinition*> AnimationDefinitionMap;
 
 class ModelManager
 {
@@ -15,47 +29,36 @@ public:
 	void CreateFbxManager();
 	void CreateFbxScene(const char* sceneName, const char* fileName);
 
-	// Debugging stuff
-	void PrintTree();
-	void PrintAnimationStacks();
-	void PrintAnimationStacks(FbxAnimStack* stack);
-	void PrintAnimationLayers(FbxAnimLayer* layer, FbxNode* node);
-	void PrintAnimationChannels(FbxNode* node, FbxAnimLayer* layer);
-	void DisplayCurveKeys(FbxAnimCurve* curve);
-	void DisplayListCurveKeys(FbxAnimCurve* pCurve, FbxProperty* pProperty);
-
 	// recursively create the tree
-	void CreateTree();
-	void PrintNode(FbxNode* fbxNode);
+	void CreateTree(std::string const & modelName);
 
 	// Recursive part of creating the tree of nodes
-	void InsertNode(FbxNode* fbxNode, SkeletonNode* parent);
+	void InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* parent);
 
-	// Getter & Setter
-	SkeletonNode* RootNode() const { return rootNode; }
-	void RootNode(SkeletonNode* val) { rootNode = val; }
+	AnimationDefinition* CurrentAnimation() const { return currentAnimation; }
+	void CurrentAnimation(AnimationDefinition* val) { currentAnimation = val; }
+	AnimationDefinition* GetAnimationDefinition(std::string const & sceneName) { return definitionMap[sceneName]; }
+	void CurrentAnimation(std::string const &  sceneName) { currentAnimation = definitionMap[sceneName]; }
+
+	void ScaleSkeleton(std::string const & sceneName, float scalingFactor);
+	void ChangeSkeletonColor(glm::vec3 const & colorValue, bool byLevel = false);
 private:
 	// Variables
 	// Supports only one model (I think) so
 	// #TODO Generalize this if you find time (don't think so pal)
 	FbxManager* fbxManager;
-	FbxScene* fbxScene;
-	FbxNode* fbxRootNode;
-	SkeletonNode* rootNode;
-	int numTabs = 0; // for printing
+	AnimationDefinition* currentAnimation;
+	AnimationDefinitionMap definitionMap;
 
 	// Helper methods
-	void PrintTabs();
 	void ConvertFbxDouble3ToGlmVec3(FbxDouble3 const & fbxVec3, glm::vec3 & floatVector);
 	void ConvertFbxDouble4ToGlmVec3(FbxVector4 const & fbxVec3, glm::vec3 & floatVector);
-	void FillAnimationTable(SkeletonNode* skeletonNode, FbxNode* node);
+	void FillAnimationTable(SkeletonNode* skeletonNode, FbxScene* scene, FbxNode* node);
 	// #JustSingletonThings
 	ModelManager();
 	ModelManager(ModelManager const &) {};
 	ModelManager& operator=(ModelManager const &) {};
 	static ModelManager* instance;
-
-	int counter = 0;
 
 };
 

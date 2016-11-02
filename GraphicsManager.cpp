@@ -37,6 +37,7 @@ MeshMap GraphicsManager::meshMap;
 
 float GraphicsManager::animationSpeed = 15.0f;
 
+//Camera GraphicsManager::camera(vec3(100.0f, 100.0f, 200.5f), vec3(0.0f, 0.0f, 0.0f));
 Camera GraphicsManager::camera(vec3(-1.0f, 3.0f, 5.5f), vec3(0.0f, 0.0f, 0.0f));
 
 SkeletonNode GraphicsManager::node;
@@ -105,15 +106,12 @@ void GraphicsManager::Render()
 	glUniformMatrix4fv(location, 1, GL_FALSE, &(ProjectionMatrix[0][0]));
 
 	ModelManager* modelManager = ModelManager::Instance();
-	SkeletonNode* rootNode = modelManager->RootNode();
+	AnimationDefinition* definition = modelManager->CurrentAnimation();
+	SkeletonNode* rootNode = definition->rootNode;
+	int size = definition->animationDurationInFrames;
 
 	double elapseTime = glfwGetTime() - animationStartingTime;
 	elapseTime *= animationSpeed;
-
-	// Yet another hack
-	// We can actually get this value from ModelManager but I know that Tad has 95
-	// So #TODO get this from the Model Manager
-	int size = 95;
 
 	// Used for extending the animation frame to multiple frames
 	// Removing this makes it go like a blue hedgehog

@@ -17,7 +17,7 @@ class SkeletonNode
 public:
 	typedef unordered_map<int, VQS> AnimationTransformationMap;
 
-	SkeletonNode(std::string const & nodeName = "");
+	SkeletonNode(std::string const & nodeName = "", vec3 const & color = vec3(1.0f));
 	~SkeletonNode();
 	
 	// Methods
@@ -32,11 +32,11 @@ public:
 	void Parent(SkeletonNode* newParent) { parent = newParent; }
 
 	void Insert(int keyFrameTime, VQS transformation);
+	void ScaleSkeleton(float scalingFactor);
 
-	// Not object oriented and I'm not happy with this as well but it clutters up the entire code when I had all getters and setters
-	// So this is a reminder to myself: this is a one-shot framework for a small project
-	// Code doesn't have to be beautiful and elegant - it needs to be written fast
-	// Deal with it.
+	void ColorSkeletonUniformly(vec3 const & color);
+	void ColorSkeletonByLevel(vec3 const & color);
+
 	VQS transformVQS;
 	int level;
 private:
@@ -46,6 +46,7 @@ private:
 	SkeletonNode* parent = NULL;
 	std::string nodeName;
 	AnimationTransformationMap transformationMap;
+	vec3 nodeColor;
 	// HELPER METHODS
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
 

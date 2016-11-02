@@ -19,10 +19,12 @@ using std::string;
 
 const string ModelMainDirectory = "Models/";
 const string TadModelName = "Tad";
+const string RunningModelName = "running_inPlace";
 const string FbxExtension = ".fbx";
 
 
 void main(){
+	string CurrentModelName = RunningModelName;
 	EngineHelper::InitializeGLFW(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, false);
 	WindowManager::InitializeWindow(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME);
 	EventManager::InitializeEvents();
@@ -32,11 +34,11 @@ void main(){
 	GraphicsManager::InitializeData();
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
-	manager->CreateFbxScene(TadModelName.c_str(), (ModelMainDirectory + TadModelName + FbxExtension).c_str());
-	manager->CreateTree();
-	//manager->PrintTree();
-	//manager->PrintAnimationStacks();
-
+	manager->CreateFbxScene(CurrentModelName.c_str(), (ModelMainDirectory + CurrentModelName + FbxExtension).c_str());
+	manager->CreateTree(CurrentModelName);
+	manager->CurrentAnimation(CurrentModelName);
+	manager->ScaleSkeleton(CurrentModelName, 0.025);
+	manager->ChangeSkeletonColor(vec3(0.2f, 0.1f, 1.0f));
 	EngineHelper::Update();
 
 	EngineHelper::Exit();

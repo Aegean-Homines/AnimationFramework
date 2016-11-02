@@ -18,7 +18,7 @@
 
 const float angleMultiplication = (PI / 180.0f);
 
-SkeletonNode::SkeletonNode(std::string const & nodeName): nodeName(nodeName)
+SkeletonNode::SkeletonNode(std::string const & nodeName, vec3 const & color): nodeName(nodeName), nodeColor(color)
 {
 	level = 0;
 	meshType = CUBE;
@@ -48,7 +48,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpol
 
 		// Get parent transform VQS and concat with my current one to find its place in world coords
 		VQS& parentTransform = parent->transformVQS;
-		transformVQS = parentTransform * transformVQS;
+ 		transformVQS = parentTransform * transformVQS;
 
 		// Get matrix data from VQS to find node's final position in world coords
 		mat4 worldTransformation(1.0f);
@@ -57,6 +57,9 @@ void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpol
 		// Send matrix to the GPU for rendering purposes
 		GLint transformLocation = glGetUniformLocation(program.program, "Transform");
 		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
+
+		GLint colorLocation = glGetUniformLocation(program.program, "Color");
+		glUniform3fv(colorLocation, 1, &nodeColor[0]);
 
 		myMesh->Draw(program);
 
@@ -92,6 +95,24 @@ SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const
 void SkeletonNode::Insert(int keyFrameTime, VQS transformation)
 {
 	transformationMap[keyFrameTime] = transformation;
+}
+
+void SkeletonNode::ScaleSkeleton(float scalingFactor)
+{
+	transformVQS.scalar = scalingFactor; //sort of cheating
+}
+
+void SkeletonNode::ColorSkeletonUniformly(vec3 const & color)
+{
+	nodeColor = color;
+	for (unsigned int i = 0; i < children.size(); ++i) {
+		children[i]->ColorSkeletonUniformly(color);
+	}
+}
+
+void SkeletonNode::ColorSkeletonByLevel(vec3 const & color)
+{
+
 }
 
 void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)

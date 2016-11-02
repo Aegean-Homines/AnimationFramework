@@ -2,9 +2,12 @@
 
 in vec3 passedColor;
 
+uniform vec3 Color;
+
 out vec4 color;
 
 void main()
 {
-    color = vec4(passedColor, 1.0f);
+	vec3 finalColor = passedColor * Color;
+    color = vec4(finalColor, 1.0f);
 } 
