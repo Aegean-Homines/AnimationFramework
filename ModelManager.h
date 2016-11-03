@@ -42,6 +42,9 @@ public:
 
 	void ScaleSkeleton(std::string const & sceneName, float scalingFactor);
 	void ChangeSkeletonColor(glm::vec3 const & colorValue, bool byLevel = false);
+
+	// Function for handling input etc for the animation
+	void Update();
 private:
 	// Variables
 	// Supports only one model (I think) so

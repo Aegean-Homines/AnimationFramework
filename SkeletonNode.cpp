@@ -10,7 +10,6 @@
 #include <glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#include <gtx/quaternion.hpp>
 
 #define PI 3.14159265359f
 #define SCALING_FACTOR 1.0f
@@ -22,6 +21,7 @@ SkeletonNode::SkeletonNode(std::string const & nodeName, vec3 const & color): no
 {
 	level = 0;
 	meshType = CUBE;
+	forwardVector = vec3(0.0f, 0.0f, 1.0f);
 }
 
 
@@ -120,7 +120,7 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 
 	// for some weird thing between root and its children
 	// #TODO remove this after figuring out a cleaner way of handling it
-	if (parent == NULL || parent->parent == NULL)
+	if (parent == NULL)
 		return;
 
 	Mesh* myMesh = GraphicsManager::GetMesh(LINE);

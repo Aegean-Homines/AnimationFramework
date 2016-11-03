@@ -6,6 +6,7 @@
 
 const static float PiOver2 = PI * 0.5f;
 const static float EpsilonForEuler = 0.00000001f;
+const float angleMultiplication = (PI / 180.0f);
 
 Quaternion::Quaternion(float scalar /*= 1.0f*/, float x /*= 1.0f*/, float y /*= 1.0f*/, float z /*= 1.0f*/):
 	scalar(scalar), imaginary(x,y,z)
@@ -211,7 +212,7 @@ mat4 Quaternion::RotationMatrix() const
 
 vec4 Quaternion::VectorForm() const
 {
-	return vec4(scalar, imaginary);
+	return vec4(imaginary, scalar);
 }
 
 vec3 Quaternion::RotatedVectorForm(vec3 const & rotationVector) const

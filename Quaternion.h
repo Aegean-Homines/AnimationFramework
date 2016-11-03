@@ -17,7 +17,7 @@ public:
 	// Default version, for unit Quaternion
 	Quaternion(float scalar = 1.0f, float x = 0.0f, float y = 0.0f, float z = 0.0f);
 	// Create Quaternion from euler angles
-	Quaternion(vec3  const & rotationEulerVector);
+	Quaternion(vec3 const & rotationEulerVector);
 	// Create Quaternion from vec4(scalar, imaginary)
 	Quaternion(vec4 const & quaternionData);
 	// Create Quaternion from scalar and vec3(imaginary)

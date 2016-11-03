@@ -63,6 +63,9 @@
     <ClCompile Include="VQS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SplineManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WindowManager.h">
@@ -108,6 +111,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VQS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SplineManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

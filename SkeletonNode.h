@@ -47,6 +47,7 @@ private:
 	std::string nodeName;
 	AnimationTransformationMap transformationMap;
 	vec3 nodeColor;
+	vec3 forwardVector;
 	// HELPER METHODS
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
 

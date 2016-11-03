@@ -1,15 +1,21 @@
 #include "ModelManager.h"
+#include "EventManager.h"
 #include "SkeletonNode.h"
 #include "VQS.h"
+
+#include <glfw3.h>
 #include <iostream>
 
 #define FRAME_RATE_MODE FbxTime::eDefaultMode
 #define PI 3.14159265359f
+#define TRANSLATE_AMOUNT 1.0f
 
 using std::cout;
 using std::endl;
 
 const float angleMultiplication = (PI / 180.0f);
+
+ModelManager* ModelManager::instance = NULL;
 
 ModelManager::ModelManager()
 {
@@ -83,6 +89,8 @@ void ModelManager::CreateTree(std::string const & modelName)
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
 			InsertNode(fbxRootNode->GetChild(i), fbxScene, rootNode);
 	}
+
+	// If there is a spline, relocate the node
 }
 
 void ModelManager::InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* parent)
@@ -124,7 +132,37 @@ void ModelManager::ChangeSkeletonColor(glm::vec3 const & colorValue, bool byLeve
 		currentAnimation->rootNode->ColorSkeletonUniformly(colorValue);
 }
 
-ModelManager* ModelManager::instance = NULL;
+void ModelManager::Update()
+{
+	vec3 & rootTranslate = currentAnimation->rootNode->transformVQS.translate;
+	if(EventManager::IsKeyTriggered(GLFW_KEY_UP)){
+		rootTranslate.z -= TRANSLATE_AMOUNT;
+	}
+	if (EventManager::IsKeyTriggered(GLFW_KEY_DOWN)) {
+		rootTranslate.z += TRANSLATE_AMOUNT;
+	}
+	if (EventManager::IsKeyTriggered(GLFW_KEY_RIGHT)) {
+		rootTranslate.x += TRANSLATE_AMOUNT;
+	}
+	if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT)) {
+		rootTranslate.x -= TRANSLATE_AMOUNT;
+	}
+	
+	if (EventManager::IsKeyTriggered(GLFW_KEY_T)) {
+		Quaternion & rootRotate = currentAnimation->rootNode->transformVQS.rotate;
+		VQS & vqs = currentAnimation->rootNode->transformVQS;
+		vec3 forward(0.0f, 0.0f, 1.0f);
+		vec3 rotated = vqs * forward;
+		vec4 vectorForm = rootRotate.VectorForm();
+		vec3 eulerform = rootRotate.EulerForm();
+		vec3 rotate(0.0f, 90.0f, 0.0f);
+		//Quaternion rotationQuat(rotate * angleMultiplication);
+		Quaternion rotationQuat(vec3(0.0f, 1.0f, 0.0f), 90.0f * angleMultiplication);
+
+		rootRotate = rotationQuat * rootRotate;
+	}
+
+}
 
 // Helper functions
 

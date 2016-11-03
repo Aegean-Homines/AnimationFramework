@@ -37,7 +37,7 @@ void main(){
 	manager->CreateFbxScene(CurrentModelName.c_str(), (ModelMainDirectory + CurrentModelName + FbxExtension).c_str());
 	manager->CreateTree(CurrentModelName);
 	manager->CurrentAnimation(CurrentModelName);
-	manager->ScaleSkeleton(CurrentModelName, 0.025);
+	manager->ScaleSkeleton(CurrentModelName, 0.025f);
 	manager->ChangeSkeletonColor(vec3(0.2f, 0.1f, 1.0f));
 	EngineHelper::Update();
 

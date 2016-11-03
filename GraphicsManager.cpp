@@ -3,6 +3,7 @@
 #include "EventManager.h"
 #include "SkeletonNode.h"
 #include "ModelManager.h"
+#include "SplineManager.h"
 
 #include <glew.h>
 #include <glfw3.h>
@@ -50,9 +51,10 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 	glm::mat4 worldTransformation = mat4(1.0f);
 	// Translate, rotate and scale
 
-	vec3 translate = vec3(0.0f, -1.0f, 0.0f);
+	vec3 translate = vec3(0.0f, -0.1f, 0.0f);
 	vec3 rotate = vec3(90.0f, 0.0f, 0.0f);
-	vec3 scale = vec3(20.0f, 20.0f, 1.0f);
+	vec3 scale = vec3(500.0f, 500.0f, 2.0f);
+	vec3 groundColor(1.0f, 0.5f, 0.0f);
 
 	worldTransformation = glm::translate(worldTransformation, translate);
 	worldTransformation = glm::rotate(worldTransformation, rotate.z * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
@@ -62,6 +64,9 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 
 	GLint transformLocation = glGetUniformLocation(program.program, "Transform");
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
+
+	GLint colorLocation = glGetUniformLocation(program.program, "Color");
+	glUniform3fv(colorLocation, 1, &groundColor[0]);
 
 	myMesh->Draw(program);
 }
@@ -118,10 +123,16 @@ void GraphicsManager::Render()
 	int frame = (int)(floor(elapseTime)) % size;
 	float interpolationAmount = elapseTime - floor(elapseTime);
 
+	// draw skeleton
 	rootNode->Draw(simpleShader, frame, interpolationAmount);
 
-	//DrawGround(simpleShader);
-	//node.Draw(simpleShader);
+	// draw ground
+	DrawGround(simpleShader);
+
+	// draw spline
+	SplineManager* splineManager = SplineManager::Instance();
+	splineManager->DrawSpline(simpleShader);
+
 	simpleShader.Unuse();
 	glfwSwapBuffers(WindowManager::GetWindow());
 }
@@ -265,13 +276,13 @@ void GraphicsManager::InitializeData()
 	Mesh* lineMesh = new Mesh(vertices, indices, GL_LINES);
 	meshMap.insert(std::pair<MeshType, Mesh*>(LINE, lineMesh));
 
-	// WON'T BE USED, just to debug to test skeleton hierarchy and calls
-	/*SkeletonNode* visibleroot = node.AddSkeletonNode(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child1");
-	visibleroot->level = 0;
-	SkeletonNode* visible2 = visibleroot->AddSkeletonNode(vec3(0.0f, -6.0f, 0.0f), vec3(0.0f, 0.0f, 90.0f), vec3(1.0f), CUBE, "Child2");
-	visible2->level = 1;
-	visibleroot->AddSkeletonNode(vec3(3.0f, -6.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.0f), CUBE, "Child3")->level = 1;
-	visible2->AddSkeletonNode(vec3(0.0f, -9.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(1.0f), CUBE, "Child4")->level = 2;*/
+	// Create the spline data
+	SplineManager* splineManager = SplineManager::Instance();
+	splineManager->InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
+	splineManager->InsertNode(new SplineNode(-5.0f, 0.0f, 2.0f));
+	splineManager->InsertNode(new SplineNode(-2.0f, 0.0f, 5.0f));
+	splineManager->InsertNode(new SplineNode(3.0f, 0.0f, 4.0f));
+
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)

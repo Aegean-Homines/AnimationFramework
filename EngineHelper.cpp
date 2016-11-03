@@ -2,6 +2,7 @@
 #include "WindowManager.h"
 #include "GraphicsManager.h"
 #include "EventManager.h"
+#include "ModelManager.h"
 #include <glew.h>
 #include <glfw3.h>
 
@@ -39,8 +40,13 @@ void EngineHelper::Update()
 {
 	while (!glfwWindowShouldClose(WindowManager::GetWindow())) {
 		double currentFrame = glfwGetTime();
+		// Input
 		EventManager::UpdateEvents();
 		WindowManager::Update();
+
+		// Model
+		ModelManager::Instance()->Update();
+
 		GraphicsManager::Update();
 		GraphicsManager::Render();
 
