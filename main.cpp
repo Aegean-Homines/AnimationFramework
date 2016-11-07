@@ -22,7 +22,6 @@ const string TadModelName = "Tad";
 const string RunningModelName = "running_inPlace";
 const string FbxExtension = ".fbx";
 
-
 void main(){
 	string CurrentModelName = RunningModelName;
 	EngineHelper::InitializeGLFW(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, false);
@@ -34,11 +33,7 @@ void main(){
 	GraphicsManager::InitializeData();
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
-	manager->CreateFbxScene(CurrentModelName.c_str(), (ModelMainDirectory + CurrentModelName + FbxExtension).c_str());
-	manager->CreateTree(CurrentModelName);
-	manager->CurrentAnimation(CurrentModelName);
-	manager->ScaleSkeleton(CurrentModelName, 0.025f);
-	manager->ChangeSkeletonColor(vec3(0.2f, 0.1f, 1.0f));
+	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 0.025f, vec3(0.2f, 0.1f, 1.0f));
 	EngineHelper::Update();
 
 	EngineHelper::Exit();

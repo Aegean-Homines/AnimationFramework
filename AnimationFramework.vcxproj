@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArcLengthSegmentManager.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="EngineHelper.cpp" />
     <ClCompile Include="EventManager.cpp" />
@@ -178,6 +179,7 @@
     <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArcLengthSegmentManager.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="EngineHelper.h" />
     <ClInclude Include="EventManager.h" />

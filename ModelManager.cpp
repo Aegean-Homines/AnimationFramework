@@ -1,6 +1,7 @@
 #include "ModelManager.h"
 #include "EventManager.h"
 #include "SkeletonNode.h"
+#include "SplineManager.h"
 #include "VQS.h"
 
 #include <glfw3.h>
@@ -71,6 +72,15 @@ void ModelManager::CreateFbxScene(const char* sceneName, const char* fileName)
 	importer->Destroy();
 }
 
+void ModelManager::InitializeModel(std::string const & modelName, std::string const & modelFileName,float scale /*= 1.0f*/, glm::vec3 const & color /*= vec3(1.0f)*/)
+{
+	CreateFbxScene(modelName.c_str(), modelFileName.c_str());
+	CreateTree(modelName);
+	CurrentAnimation(modelName);
+	ScaleSkeleton(modelName, scale);
+	ChangeSkeletonColor(color);
+}
+
 void ModelManager::CreateTree(std::string const & modelName)
 {
 	AnimationDefinition* definition = definitionMap[modelName];
@@ -91,6 +101,9 @@ void ModelManager::CreateTree(std::string const & modelName)
 	}
 
 	// If there is a spline, relocate the node
+	SplineManager* manager = SplineManager::Instance();
+	manager->RelocateRootNode(rootNode);
+
 }
 
 void ModelManager::InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* parent)
@@ -149,17 +162,8 @@ void ModelManager::Update()
 	}
 	
 	if (EventManager::IsKeyTriggered(GLFW_KEY_T)) {
-		Quaternion & rootRotate = currentAnimation->rootNode->transformVQS.rotate;
-		VQS & vqs = currentAnimation->rootNode->transformVQS;
-		vec3 forward(0.0f, 0.0f, 1.0f);
-		vec3 rotated = vqs * forward;
-		vec4 vectorForm = rootRotate.VectorForm();
-		vec3 eulerform = rootRotate.EulerForm();
-		vec3 rotate(0.0f, 90.0f, 0.0f);
-		//Quaternion rotationQuat(rotate * angleMultiplication);
-		Quaternion rotationQuat(vec3(0.0f, 1.0f, 0.0f), 90.0f * angleMultiplication);
+		
 
-		rootRotate = rotationQuat * rootRotate;
 	}
 
 }
@@ -210,7 +214,7 @@ void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxScene* scen
 		ConvertFbxDouble3ToGlmVec3(fbxRotate, rotate);
 
 		// Rotation to quaternion
-		Quaternion rotationQuat(rotate * angleMultiplication);
+		Quaternion rotationQuat(rotate);
 
 		// Create a VQS for that frame and store it in the map
 		skeletonNode->Insert(i, VQS(translate, rotationQuat));

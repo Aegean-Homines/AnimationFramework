@@ -34,8 +34,11 @@ public:
 	void Insert(int keyFrameTime, VQS transformation);
 	void ScaleSkeleton(float scalingFactor);
 
+	// Visual fun stuff
 	void ColorSkeletonUniformly(vec3 const & color);
 	void ColorSkeletonByLevel(vec3 const & color);
+	void DrawLineToPoint(ShaderProgram const & program, vec3 const & point, vec3 const & color = vec3(1.0f));
+	bool LookAt(vec3 const & targetLocation);
 
 	VQS transformVQS;
 	int level;
@@ -48,6 +51,7 @@ private:
 	AnimationTransformationMap transformationMap;
 	vec3 nodeColor;
 	vec3 forwardVector;
+	vec3 upVector;
 	// HELPER METHODS
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
 

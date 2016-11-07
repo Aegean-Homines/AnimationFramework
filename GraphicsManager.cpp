@@ -121,8 +121,11 @@ void GraphicsManager::Render()
 	// Used for extending the animation frame to multiple frames
 	// Removing this makes it go like a blue hedgehog
 	int frame = (int)(floor(elapseTime)) % size;
-	float interpolationAmount = elapseTime - floor(elapseTime);
+	float interpolationAmount = static_cast<float>(elapseTime - floor(elapseTime));
 
+	SplineManager* splineManager = SplineManager::Instance();
+	splineManager->AdvanceOnSpline(rootNode, elapseTime);
+	
 	// draw skeleton
 	rootNode->Draw(simpleShader, frame, interpolationAmount);
 
@@ -130,7 +133,6 @@ void GraphicsManager::Render()
 	DrawGround(simpleShader);
 
 	// draw spline
-	SplineManager* splineManager = SplineManager::Instance();
 	splineManager->DrawSpline(simpleShader);
 
 	simpleShader.Unuse();
@@ -279,10 +281,17 @@ void GraphicsManager::InitializeData()
 	// Create the spline data
 	SplineManager* splineManager = SplineManager::Instance();
 	splineManager->InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
-	splineManager->InsertNode(new SplineNode(-5.0f, 0.0f, 2.0f));
-	splineManager->InsertNode(new SplineNode(-2.0f, 0.0f, 5.0f));
-	splineManager->InsertNode(new SplineNode(3.0f, 0.0f, 4.0f));
+	splineManager->InsertNode(new SplineNode(-7.0f, 0.0f, 2.0f));
+	splineManager->InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
+	splineManager->InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
+	splineManager->InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
+	splineManager->InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
+	splineManager->InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
+	splineManager->InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
+	splineManager->InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
+	splineManager->InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));
 
+	splineManager->BuildSpline();
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)

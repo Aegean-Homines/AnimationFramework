@@ -26,13 +26,15 @@ Quaternion::Quaternion(float scalar, vec3 const & imaginaryVector)
 
 Quaternion::Quaternion(vec3 const & rotationEulerVector)
 {
-	float cosX = glm::cos(rotationEulerVector[0] * 0.5f);
-	float cosY = glm::cos(rotationEulerVector[1] * 0.5f);
-	float cosZ = glm::cos(rotationEulerVector[2] * 0.5f);
+	vec3 convertedEulerVector = rotationEulerVector * angleMultiplication;
 
-	float sinX = glm::sin(rotationEulerVector[0] * 0.5f);
-	float sinY = glm::sin(rotationEulerVector[1] * 0.5f);
-	float sinZ = glm::sin(rotationEulerVector[2] * 0.5f);
+	float cosX = glm::cos(convertedEulerVector[0] * 0.5f);
+	float cosY = glm::cos(convertedEulerVector[1] * 0.5f);
+	float cosZ = glm::cos(convertedEulerVector[2] * 0.5f);
+
+	float sinX = glm::sin(convertedEulerVector[0] * 0.5f);
+	float sinY = glm::sin(convertedEulerVector[1] * 0.5f);
+	float sinZ = glm::sin(convertedEulerVector[2] * 0.5f);
 
 	imaginary[0] = cosZ * cosY * sinX - sinZ * sinY * cosX;
 	imaginary[1] = cosZ * sinY * cosX + sinZ * cosY * sinX;
@@ -43,8 +45,10 @@ Quaternion::Quaternion(vec3 const & rotationEulerVector)
 
 Quaternion::Quaternion(vec3 const & unitAxis, float angle)
 {
-	scalar = cosf(angle / 2.0f);
-	imaginary = unitAxis * sinf(angle / 2.0f);
+	float convertedAngle = angle * angleMultiplication;
+
+	scalar = cosf(convertedAngle / 2.0f);
+	imaginary = unitAxis * sinf(convertedAngle / 2.0f);
 }
 
 void Quaternion::Imaginary(vec3 const & imaginaryVector)

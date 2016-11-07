@@ -28,6 +28,7 @@ public:
 	// Methods
 	void CreateFbxManager();
 	void CreateFbxScene(const char* sceneName, const char* fileName);
+	void InitializeModel(std::string const & modelName, std::string const & modelFileName, float scale = 1.0f, glm::vec3 const & color = glm::vec3(1.0f));
 
 	// recursively create the tree
 	void CreateTree(std::string const & modelName);
@@ -47,8 +48,6 @@ public:
 	void Update();
 private:
 	// Variables
-	// Supports only one model (I think) so
-	// #TODO Generalize this if you find time (don't think so pal)
 	FbxManager* fbxManager;
 	AnimationDefinition* currentAnimation;
 	AnimationDefinitionMap definitionMap;
