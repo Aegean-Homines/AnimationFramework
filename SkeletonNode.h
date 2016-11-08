@@ -2,7 +2,7 @@
 
 #include <glm.hpp>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include "Types.h"
 #include "ShaderProgram.h"
 #include "VQS.h"
@@ -10,18 +10,18 @@
 using glm::vec3;
 using glm::mat4;
 using std::vector;
-using std::unordered_map;
+using std::map;
 
 class SkeletonNode
 {
 public:
-	typedef unordered_map<int, VQS> AnimationTransformationMap;
+	typedef map<int, VQS> AnimationTransformationMap;
 
 	SkeletonNode(std::string const & nodeName = "", vec3 const & color = vec3(1.0f));
 	~SkeletonNode();
 	
 	// Methods
-	void Draw(ShaderProgram const & program, int frame, float interpolationAmount);
+	void Draw(ShaderProgram const & program, float elapseTime);
 	SkeletonNode* AddSkeletonNode(MeshType meshType, std::string const & nodeName = "");
 	void AddSkeletonNode(SkeletonNode* child);
 	SkeletonNode* GetChild(unsigned int index) { if (index <= children.size()) return children[index]; return NULL; }
@@ -54,6 +54,7 @@ private:
 	vec3 upVector;
 	// HELPER METHODS
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
+	void CalculateTransformVQS(float time);
 
 };
 

@@ -34,6 +34,10 @@ public:
 	static void Width(int newWidth) { width = newWidth; }
 	static int Height() { return height; }
 	static void Height(int newHeight) { height = newHeight; }
+	static float DeltaTime() { return deltaTime; }
+	static void DeltaTime(float val) { deltaTime = val; }
+	static float ElapseTime() { return elapseTime; }
+	static void ElapseTime(float val) { elapseTime = val; }
 private:
 	static ShaderProgram simpleShader;
 	static VAO vao;
@@ -52,5 +56,8 @@ private:
 	static SkeletonNode node;
 
 	static void DrawGround(ShaderProgram& program);
+
+	static float deltaTime;
+	static float elapseTime;
 };
 

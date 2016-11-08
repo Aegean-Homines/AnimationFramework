@@ -3,6 +3,7 @@
 #include "SkeletonNode.h"
 #include "Mesh.h"
 #include "Types.h"
+#include "ArcLengthSegmentManager.h"
 
 #include <gtc/matrix_transform.hpp>
 #include <algorithm>
@@ -10,12 +11,12 @@
 #include <iostream>
 
 #define INTERVAL 10
+#define TOTAL_ANIMATION_IN_SECONDS 7000
 
 SplineManager::SplineManager()
 {
-	currentSplineNodeIndex = 0;
+	//currentSplineNodeIndex = 0;
 }
-
 
 SplineManager* SplineManager::instance;
 
@@ -36,12 +37,23 @@ SplineManager::~SplineManager()
 
 void SplineManager::BuildSpline()
 {
-	std::cout << "Original Points" << std::endl;
-	PrintVector(nodeList);
-	Spline();
-	for (unsigned int i = 0; i < splineSetVector.size(); ++i)
-		std::cout << splineSetVector[i].d << "\t" << splineSetVector[i].c << "\t" << splineSetVector[i].b << "\t" << splineSetVector[i].a << "\t" << splineSetVector[i].x << std::endl;
+	// Magic numbers for nodes
+	InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
+	InsertNode(new SplineNode(-7.0f, 0.0f, 2.0f));
+	InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
+	InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
+	InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
+	InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
+	InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
+	InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
+	InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
+	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));
 
+	//PrintVector(nodeList);
+	// Actual spline calculation
+	Spline();
+
+	// Divides control points into intervals so that the curve looks smoother
 	CalculatePointsBetweenControlPoints();
 }
 
@@ -63,38 +75,45 @@ void SplineManager::InsertNode(SplineNode* node)
 	nodeList.push_back(node);
 }
 
-void SplineManager::RelocateRootNode(SkeletonNode * rootNode)
+void SplineManager::RelocateRootNode(SkeletonNode* rootNode, float u)
 {
-	if (totalList.size() != 0) {
-		rootNode->transformVQS.translate = totalList[currentSplineNodeIndex]->nodeLocation;
+	// Use u to calculate it's position on the spline
+ 	glm::vec3 targetPos = GetPointAtParametricValue(u);
+	rootNode->transformVQS.translate = targetPos;
+
+}
+
+float SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime, int totalTime)
+{
+	// Hackish timer resetting, wohoo!
+	velocityTimer += deltaTime / TOTAL_ANIMATION_IN_SECONDS;
+	if (velocityTimer > 1.0f) {
+		velocityTimer = 0.0f;
 	}
+
+	ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
+	// calculate s from t
+	float arcLength = segmentManager->GetArcLengthUsingTime(velocityTimer);
+	// calculate u from s
+	float paramVal = segmentManager->FindParametricValue(arcLength);
+	// translate node to its next location
+	RelocateRootNode(rootNode, paramVal);
+	
+	// Get the next location using the future time
+	float nextTime = velocityTimer + (deltaTime / TOTAL_ANIMATION_IN_SECONDS);
+	float nextArcLength = segmentManager->GetArcLengthUsingTime(nextTime);
+	paramVal = segmentManager->FindParametricValue(nextArcLength);
+
+	// Get the target of the next location and look at it
+	vec3 target = GetPointAtParametricValue(paramVal);
+	rootNode->LookAt(target);
+	return segmentManager->GetVelocity(velocityTimer);
+
 }
 
-void SplineManager::CurrentSplineNodeIndex(unsigned int index)
+glm::vec3 SplineManager::GetPointAtParametricValue(float u)
 {
-	currentSplineNodeIndex = index % totalList.size();
-}
-
-vec3 const & SplineManager::NextSplineNode()
-{
-	if (currentSplineNodeIndex + 1 == totalList.size())
-		return totalList[0]->nodeLocation;
-
-	return totalList[currentSplineNodeIndex + 1]->nodeLocation;
-}
-
-void SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime)
-{
-	currentSplineNodeIndex = (int)(floor(deltaTime)) % (totalList.size() - 1);
-	// rotate the model towards the next node and move it
-	Quaternion & rootRotate = rootNode->transformVQS.rotate;
-	RelocateRootNode(rootNode);
-	rootNode->LookAt(totalList[currentSplineNodeIndex + 1]->nodeLocation);
-}
-
-float SplineManager::GetPointAtParametricValue(float u)
-{
-	/*float minPoint = nodeList[0]->nodeLocation.x;
+	float minPoint = nodeList[0]->nodeLocation.x;
 	float maxPoint = nodeList[nodeList.size() - 1]->nodeLocation.x;
 	
 	float interval = maxPoint - minPoint;
@@ -102,13 +121,30 @@ float SplineManager::GetPointAtParametricValue(float u)
 
 	for (unsigned int i = 0; i < splineSetVector.size(); ++i) {
 		// find the function interval for that point
-		if(realXEquivalent >= splineSetVector[i].x)
+		// #TODO: to binary search
+		if (realXEquivalent >= nodeList[i]->nodeLocation.x && realXEquivalent < nodeList[i+1]->nodeLocation.x) {
+			return GetPointAtX(realXEquivalent, splineSetVector[i]);
+		}
 	}
-	*/
 
-	return 0.0f;
+	return nodeList.back()->nodeLocation;
+	
 }
 
+glm::vec3 SplineManager::GetPointAtX(float x, SplineSet const & splineSet)
+{
+	// eq parts
+	double a = splineSet.a;
+	double b = splineSet.b * (x - splineSet.x);
+	double c = splineSet.c * pow(x - splineSet.x, 2);
+	double d = splineSet.d * pow(x - splineSet.x, 3);
+	// final result
+	float y = static_cast<float>(a + b + c + d);
+
+	return vec3(x, 0, y);
+}
+
+// #GodBlessWikipedia
 void SplineManager::Spline()
 {
 	splineSetVector.clear();
@@ -219,15 +255,9 @@ void SplineManager::CalculatePointsBetweenControlPoints()
 		// Formula = s = a + b(x-xControl) + c(x-xcontrol)^2 + d(x-xcontrol)^3
 		for (int j = 1; j < INTERVAL; ++j) {
 			float pointX = x + (xDistancePerInterval * j);
-			// eq parts
-			double a = currentSet.a;
-			double b = currentSet.b * (pointX - x);
-			double c = currentSet.c * pow(pointX - x, 2);
-			double d = currentSet.d * pow(pointX - x, 3);
-			// final result
-			float y = static_cast<float>(a + b + c + d);		
-			totalList.push_back(new SplineNode(vec3(pointX, 0, y)));
-			insertedNodeList.push_back(new SplineNode(vec3(pointX, 0, y)));
+			vec3 point = GetPointAtX(pointX, currentSet);
+			totalList.push_back(new SplineNode(point));
+			insertedNodeList.push_back(new SplineNode(point));
 		}
 	}
 

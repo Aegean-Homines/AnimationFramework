@@ -71,6 +71,10 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 	myMesh->Draw(program);
 }
 
+float GraphicsManager::deltaTime;
+
+float GraphicsManager::elapseTime = 0.0f;
+
 GraphicsManager::GraphicsManager()
 {
 }
@@ -110,24 +114,21 @@ void GraphicsManager::Render()
 	location = glGetUniformLocation(simpleShader.program, "ProjectionMatrix");
 	glUniformMatrix4fv(location, 1, GL_FALSE, &(ProjectionMatrix[0][0]));
 
+	SplineManager* splineManager = SplineManager::Instance();
 	ModelManager* modelManager = ModelManager::Instance();
 	AnimationDefinition* definition = modelManager->CurrentAnimation();
 	SkeletonNode* rootNode = definition->rootNode;
-	int size = definition->animationDurationInFrames;
-
-	double elapseTime = glfwGetTime() - animationStartingTime;
-	elapseTime *= animationSpeed;
-
-	// Used for extending the animation frame to multiple frames
-	// Removing this makes it go like a blue hedgehog
-	int frame = (int)(floor(elapseTime)) % size;
-	float interpolationAmount = static_cast<float>(elapseTime - floor(elapseTime));
-
-	SplineManager* splineManager = SplineManager::Instance();
-	splineManager->AdvanceOnSpline(rootNode, elapseTime);
+	FbxLongLong totalTime = definition->animationDuration.GetMilliSeconds();
 	
+	float deltaTimeInMs = deltaTime * 1000.0f;
+	
+	float velocity = splineManager->AdvanceOnSpline(rootNode, deltaTimeInMs, totalTime);
+	elapseTime += (deltaTimeInMs * velocity);
+	if (elapseTime > totalTime)
+		elapseTime = 0.0f;
+
 	// draw skeleton
-	rootNode->Draw(simpleShader, frame, interpolationAmount);
+	rootNode->Draw(simpleShader, elapseTime);
 
 	// draw ground
 	DrawGround(simpleShader);
@@ -277,21 +278,6 @@ void GraphicsManager::InitializeData()
 
 	Mesh* lineMesh = new Mesh(vertices, indices, GL_LINES);
 	meshMap.insert(std::pair<MeshType, Mesh*>(LINE, lineMesh));
-
-	// Create the spline data
-	SplineManager* splineManager = SplineManager::Instance();
-	splineManager->InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
-	splineManager->InsertNode(new SplineNode(-7.0f, 0.0f, 2.0f));
-	splineManager->InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
-	splineManager->InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
-	splineManager->InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
-	splineManager->InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
-	splineManager->InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
-	splineManager->InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
-	splineManager->InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
-	splineManager->InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));
-
-	splineManager->BuildSpline();
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)

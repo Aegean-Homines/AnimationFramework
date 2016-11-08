@@ -4,8 +4,9 @@
 #include "GraphicsManager.h"
 #include "EventManager.h"
 #include "Quaternion.h"
-#include <iostream>
 
+#include <fbxsdk.h>
+#include <iostream>
 #include <glew.h>
 #include <glfw3.h>
 #include <glm.hpp>
@@ -31,7 +32,7 @@ SkeletonNode::~SkeletonNode()
 {
 }
 
-void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpolationAmount)
+void SkeletonNode::Draw(ShaderProgram const & program, float elapseTime)
 {
 	// I'm using these in case I want to debug something
 	/* 
@@ -43,10 +44,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpol
 	if (parent != NULL) {
 		Mesh* myMesh = GraphicsManager::GetMesh(meshType);
 			 
-		VQS& currentVQS = transformationMap[frame];
-		VQS& nextVQS = transformationMap[frame + 1];
-
-		transformVQS = VQS::Slerp(currentVQS, nextVQS, interpolationAmount);
+		CalculateTransformVQS(elapseTime);
 
 		// Get parent transform VQS and concat with my current one to find its place in world coords
 		VQS& parentTransform = parent->transformVQS;
@@ -78,7 +76,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, int frame, float interpol
 
 	// Recursively call draw for all the children of this node
 	for (unsigned int i = 0; i < children.size(); ++i) {
-		children[i]->Draw(program, frame, interpolationAmount);
+		children[i]->Draw(program, elapseTime);
 	}
 
 	
@@ -193,4 +191,26 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 
 	DrawLineToPoint(program, parentTranslate);
 	
+}
+
+void SkeletonNode::CalculateTransformVQS(float time)
+{
+	AnimationTransformationMap::iterator current = transformationMap.begin();
+	AnimationTransformationMap::iterator next = current;
+	++next;
+
+	while (next != transformationMap.end()) {
+
+		if (current->first <= time && next->first > time) {
+			float interpolationAmount = (time - current->first) / (next->first - current->first);
+			transformVQS = VQS::Slerp(current->second, next->second, interpolationAmount);
+			return;
+		}
+
+		++next;
+		++current;
+	}
+
+	transformVQS = current->second;
+
 }

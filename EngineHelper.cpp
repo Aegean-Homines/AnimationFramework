@@ -51,12 +51,13 @@ void EngineHelper::Update()
 		GraphicsManager::Render();
 
 		lastFrame = glfwGetTime();
-		/*do
+		do
 		{
-			
-		} while (lastFrame - currentFrame < (1.0f / 60.0f));*/
+			lastFrame = glfwGetTime();
+		} while ((deltaTime = lastFrame - currentFrame) < (1.0f / 60.0f));
 
-		deltaTime = lastFrame - currentFrame;
+		GraphicsManager::DeltaTime(deltaTime);
+		//std::cout << deltaTime << std::endl;
 	}
 }
 

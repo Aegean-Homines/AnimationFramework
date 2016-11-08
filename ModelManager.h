@@ -8,11 +8,11 @@ class SkeletonNode;
 struct AnimationDefinition {
 	FbxScene* fbxScene;
 	SkeletonNode* rootNode;
-	int animationDurationInFrames;
+	FbxTime animationDuration;
 
-	AnimationDefinition(FbxScene* fbxScene = nullptr, SkeletonNode* rootNode = nullptr, int animationDurationInFrames = 0)
+	AnimationDefinition(FbxScene* fbxScene = nullptr, SkeletonNode* rootNode = nullptr, int animationDuration = 0)
 		:
-		fbxScene(fbxScene), rootNode(rootNode), animationDurationInFrames(animationDurationInFrames)
+		fbxScene(fbxScene), rootNode(rootNode), animationDuration(animationDuration)
 	{}
 };
 

@@ -92,17 +92,13 @@ void ModelManager::CreateTree(std::string const & modelName)
 	// Get Animation Duration
 	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
 	FbxTakeInfo* takeInfo = fbxScene->GetTakeInfo(animStack->GetName());
-	int frametime = static_cast<int>(takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE));
-	definition->animationDurationInFrames = frametime;
+	FbxTime frametime = takeInfo->mLocalTimeSpan.GetDuration();
+	definition->animationDuration = frametime;
 
 	if (fbxRootNode) {
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
 			InsertNode(fbxRootNode->GetChild(i), fbxScene, rootNode);
 	}
-
-	// If there is a spline, relocate the node
-	SplineManager* manager = SplineManager::Instance();
-	manager->RelocateRootNode(rootNode);
 
 }
 
@@ -193,14 +189,13 @@ void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxScene* scen
 	FbxTimeSpan localSpan = animStack->GetLocalTimeSpan();
 	FbxAnimLayer* layer = animStack->GetMember<FbxAnimLayer>(0);
 	FbxTakeInfo* takeInfo = scene->GetTakeInfo(animStack->GetName());
-	int frametime = static_cast<int>(takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE));
+	int frameCount = static_cast<int>(takeInfo->mLocalTimeSpan.GetDuration().GetFrameCount(FRAME_RATE_MODE));
 
-	for (int i = 0; i <= frametime; ++i) {
+	for (int i = 0; i <= frameCount; ++i) {
 		FbxTime frameTime;
 		frameTime.SetFrame(i);
-
 		// We can get the resulting transform matrix directly from the fbx file
-		FbxAMatrix transform = node->EvaluateLocalTransform(frameTime);
+ 		FbxAMatrix transform = node->EvaluateLocalTransform(frameTime);
 
 		// Get current translation values
 		FbxDouble3 fbxTranslate, fbxRotate, fbxScale;
@@ -217,7 +212,8 @@ void ModelManager::FillAnimationTable(SkeletonNode* skeletonNode, FbxScene* scen
 		Quaternion rotationQuat(rotate);
 
 		// Create a VQS for that frame and store it in the map
-		skeletonNode->Insert(i, VQS(translate, rotationQuat));
+		int timeInMilliseconds = static_cast<int>(frameTime.GetMilliSeconds());
+		skeletonNode->Insert(timeInMilliseconds, VQS(translate, rotationQuat));
 	}
 	
 }

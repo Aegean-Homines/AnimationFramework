@@ -6,6 +6,8 @@
 #include "EventManager.h"
 #include "GraphicsManager.h"
 #include "ModelManager.h"
+#include "SplineManager.h"
+#include "ArcLengthSegmentManager.h"
 
 #include <iostream>
 
@@ -34,6 +36,15 @@ void main(){
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
 	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 0.025f, vec3(0.2f, 0.1f, 1.0f));
+
+	// Create the spline data
+	SplineManager* splineManager = SplineManager::Instance();
+	splineManager->BuildSpline();
+
+	// Calculate arc-length
+	ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
+	segmentManager->FillSegmentationTable(0.0005f, 0.01f);
+
 	EngineHelper::Update();
 
 	EngineHelper::Exit();
