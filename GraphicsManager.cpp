@@ -18,6 +18,8 @@ const float angleMultiplication = (PI / 180.0f);
 using glm::vec3;
 using std::vector;
 
+const bool continuousAnimation = true;
+
 std::string shaderLocation = "Shaders/";
 std::string vertexShaderSuffix = ".vert";
 std::string fragmentShaderSuffix = ".frag";
@@ -67,6 +69,34 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 
 	GLint colorLocation = glGetUniformLocation(program.program, "Color");
 	glUniform3fv(colorLocation, 1, &groundColor[0]);
+
+	myMesh->Draw(program);
+}
+
+void GraphicsManager::DrawTarget(ShaderProgram & program)
+{
+	Mesh* myMesh = GraphicsManager::GetMesh(CUBE);
+
+	// Reset matrix to identity
+	glm::mat4 worldTransformation = mat4(1.0f);
+	// Translate, rotate and scale
+
+	vec3 translate = vec3(-1.0f, 3.0f, 0.0f);
+	vec3 rotate = vec3(0.0f, 0.0f, 0.0f);
+	vec3 scale = vec3(2.0f);
+	vec3 meshColor(1.0f, 1.0f, 1.0f);
+
+	worldTransformation = glm::translate(worldTransformation, translate);
+	worldTransformation = glm::rotate(worldTransformation, rotate.z * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
+	worldTransformation = glm::rotate(worldTransformation, rotate.y * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
+	worldTransformation = glm::rotate(worldTransformation, rotate.x * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
+	worldTransformation = glm::scale(worldTransformation, scale);
+
+	GLint transformLocation = glGetUniformLocation(program.program, "Transform");
+	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
+
+	GLint colorLocation = glGetUniformLocation(program.program, "Color");
+	glUniform3fv(colorLocation, 1, &meshColor[0]);
 
 	myMesh->Draw(program);
 }
@@ -122,16 +152,25 @@ void GraphicsManager::Render()
 	
 	float deltaTimeInMs = deltaTime * 1000.0f;
 	
-	float velocity = splineManager->AdvanceOnSpline(rootNode, deltaTimeInMs, totalTime);
+	float velocity = splineManager->AdvanceOnSpline(rootNode, deltaTimeInMs, totalTime, continuousAnimation);
 	elapseTime += (deltaTimeInMs * velocity);
-	if (elapseTime > totalTime)
-		elapseTime = 0.0f;
+	if (elapseTime > totalTime) {
+		if (splineManager->isAnimationFinished) {
+			elapseTime = totalTime;
+		}
+		else {
+			elapseTime = 0.0f;
+		}
 
+	}
+		
 	// draw skeleton
 	rootNode->Draw(simpleShader, elapseTime);
 
 	// draw ground
 	DrawGround(simpleShader);
+
+	DrawTarget(simpleShader);
 
 	// draw spline
 	splineManager->DrawSpline(simpleShader);

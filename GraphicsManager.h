@@ -56,6 +56,7 @@ private:
 	static SkeletonNode node;
 
 	static void DrawGround(ShaderProgram& program);
+	static void DrawTarget(ShaderProgram& program);
 
 	static float deltaTime;
 	static float elapseTime;

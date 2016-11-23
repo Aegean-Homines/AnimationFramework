@@ -43,7 +43,7 @@ void main(){
 
 	// Calculate arc-length
 	ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
-	segmentManager->FillSegmentationTable(0.0005f, 0.01f);
+	segmentManager->FillSegmentationTable(splineManager->alpha, 0.0001f);
 
 	EngineHelper::Update();
 

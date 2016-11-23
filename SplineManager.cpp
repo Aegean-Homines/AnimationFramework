@@ -10,12 +10,10 @@
 #include <cmath>
 #include <iostream>
 
-#define INTERVAL 10
-#define TOTAL_ANIMATION_IN_SECONDS 7000
-
 SplineManager::SplineManager()
 {
 	//currentSplineNodeIndex = 0;
+
 }
 
 SplineManager* SplineManager::instance;
@@ -35,20 +33,24 @@ SplineManager::~SplineManager()
 	}
 }
 
-void SplineManager::BuildSpline()
+void SplineManager::BuildSpline() 
 {
 	// Magic numbers for nodes
 	InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
-	InsertNode(new SplineNode(-7.0f, 0.0f, 2.0f));
-	InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
+	InsertNode(new SplineNode(-3.0f, 0.0f, 0.0f));
+	/*InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
 	InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
 	InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
 	InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
 	InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
 	InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
 	InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
-	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));
+	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));*/
 
+
+	steps = static_cast<float>((nodeList.size()-1) * INTERVAL);
+	drawingAlpha = 1.0f / steps;
+	alpha = 0.005f;
 	//PrintVector(nodeList);
 	// Actual spline calculation
 	Spline();
@@ -83,127 +85,82 @@ void SplineManager::RelocateRootNode(SkeletonNode* rootNode, float u)
 
 }
 
-float SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime, int totalTime)
+float SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime, int totalTime, bool continuous)
 {
 	// Hackish timer resetting, wohoo!
-	velocityTimer += deltaTime / TOTAL_ANIMATION_IN_SECONDS;
+	velocityTimer += static_cast<float>(deltaTime / TOTAL_ANIMATION_IN_SECONDS);
 	if (velocityTimer > 1.0f) {
-		velocityTimer = 0.0f;
+		velocityTimer = continuous ? 0.0f : 1.0f;
+		isAnimationFinished = true;
 	}
-
 	ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
-	// calculate s from t
-	float arcLength = segmentManager->GetArcLengthUsingTime(velocityTimer);
-	// calculate u from s
-	float paramVal = segmentManager->FindParametricValue(arcLength);
-	// translate node to its next location
-	RelocateRootNode(rootNode, paramVal);
-	
-	// Get the next location using the future time
-	float nextTime = velocityTimer + (deltaTime / TOTAL_ANIMATION_IN_SECONDS);
-	float nextArcLength = segmentManager->GetArcLengthUsingTime(nextTime);
-	paramVal = segmentManager->FindParametricValue(nextArcLength);
+	if (!isAnimationFinished) {
+		// calculate s from t
+		float arcLength = segmentManager->GetArcLengthUsingTime(velocityTimer);
+		// calculate u from s
+		float paramVal = segmentManager->FindParametricValue(arcLength);
+		// translate node to its next location
+		RelocateRootNode(rootNode, paramVal);
 
-	// Get the target of the next location and look at it
-	vec3 target = GetPointAtParametricValue(paramVal);
-	rootNode->LookAt(target);
+		// Get the next location using the future time
+		float nextTime = static_cast<float>(velocityTimer + (deltaTime / TOTAL_ANIMATION_IN_SECONDS));
+		float nextArcLength = segmentManager->GetArcLengthUsingTime(nextTime);
+		paramVal = segmentManager->FindParametricValue(nextArcLength);
+
+		// Get the target of the next location and look at it
+		vec3 target = GetPointAtParametricValue(paramVal);
+		rootNode->LookAt(target);
+	}
+	
 	return segmentManager->GetVelocity(velocityTimer);
 
 }
 
 glm::vec3 SplineManager::GetPointAtParametricValue(float u)
 {
-	float minPoint = nodeList[0]->nodeLocation.x;
-	float maxPoint = nodeList[nodeList.size() - 1]->nodeLocation.x;
-	
-	float interval = maxPoint - minPoint;
-	float realXEquivalent = (u * interval) + minPoint;
-
-	for (unsigned int i = 0; i < splineSetVector.size(); ++i) {
-		// find the function interval for that point
-		// #TODO: to binary search
-		if (realXEquivalent >= nodeList[i]->nodeLocation.x && realXEquivalent < nodeList[i+1]->nodeLocation.x) {
-			return GetPointAtX(realXEquivalent, splineSetVector[i]);
-		}
+	int index = static_cast<int>(u / alpha);
+	vec3 prevLoc = totalList[index]->nodeLocation;
+	vec3 nextLoc;
+	if (index == totalList.size() - 1) {
+		nextLoc = prevLoc;
+	}
+	else {
+		nextLoc = totalList[index + 1]->nodeLocation;
 	}
 
-	return nodeList.back()->nodeLocation;
-	
-}
-
-glm::vec3 SplineManager::GetPointAtX(float x, SplineSet const & splineSet)
-{
-	// eq parts
-	double a = splineSet.a;
-	double b = splineSet.b * (x - splineSet.x);
-	double c = splineSet.c * pow(x - splineSet.x, 2);
-	double d = splineSet.d * pow(x - splineSet.x, 3);
-	// final result
-	float y = static_cast<float>(a + b + c + d);
-
-	return vec3(x, 0, y);
+	float delta = (u / alpha) - index;
+	return (nextLoc * delta + prevLoc * (1 - delta));
 }
 
 // #GodBlessWikipedia
 void SplineManager::Spline()
 {
-	splineSetVector.clear();
-	std::vector<float> x;
-	std::vector<float> y;
-	for (unsigned int i = 0; i < nodeList.size(); ++i) {
-		x.push_back(nodeList[i]->nodeLocation.x);
-		y.push_back(nodeList[i]->nodeLocation.z);
+	function.reserve(MATRIX_SIZE);
+	CalculateFunction();
+
+	std::cout << "f(t) initialized" << std::endl;
+
+	firstDerivative = function;
+	Derive(firstDerivative);
+
+	std::cout << "First derivative of f(t) initialized" << std::endl;
+
+	secondDerivative = firstDerivative;
+	Derive(secondDerivative);
+
+	std::cout << "Second derivative of f(t) initialized" << std::endl;
+
+	coeffMatrixX.resize(MATRIX_SIZE);
+	coeffMatrixY.resize(MATRIX_SIZE);
+	for (unsigned int i = 0; i < MATRIX_SIZE; ++i) {
+		coeffMatrixX[i].resize(MATRIX_SIZE + 1);
+		coeffMatrixY[i].resize(MATRIX_SIZE + 1);
 	}
+	CreateMatrix(coeffMatrixX);
+	CreateMatrix(coeffMatrixY);
 
-	int n = x.size() - 1;
-	std::vector<float> a;
-	a.insert(a.begin(), y.begin(), y.end());
-	std::vector<float> b(n);
-	std::vector<float> d(n);
-	std::vector<float> h(n);
+	std::cout << "Matrix creation is complete." << std::endl;
 
-	for (int i = 0; i < n; ++i)
-		h[i] = x[i + 1] - x[i];
-
-	std::vector<float> alpha(n);
-	for (int i = 1; i < n; ++i)
-		alpha[i] = ((3 / h[i]) * (a[i + 1] - a[i])) - ((3 / h[i - 1])*(a[i] - a[i - 1]));
-
-	std::vector<float> c(n + 1);
-	std::vector<float> l(n + 1);
-	std::vector<float> mu(n + 1);
-	std::vector<float> z(n + 1);
-	l[0] = 1;
-	mu[0] = 0;
-	z[0] = 0;
-
-	for (int i = 1; i < n; ++i)
-	{
-		l[i] = (2 * (x[i + 1] - x[i - 1])) - (h[i - 1] * mu[i - 1]);
-		mu[i] = h[i] / l[i];
-		z[i] = (alpha[i] - (h[i - 1] * z[i - 1])) / l[i];
-	}
-
-	l[n] = 1;
-	z[n] = 0;
-	c[n] = 0;
-
-	for (int j = n - 1; j >= 0; --j)
-	{
-		c[j] = z[j] - mu[j] * c[j + 1];
-		b[j] = ((a[j + 1] - a[j]) / h[j]) - (h[j] * (c[j + 1] + 2 * c[j]) / 3);
-		d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
-	}
-
-	splineSetVector.resize(n);
-	for (int i = 0; i < n; ++i)
-	{
-		splineSetVector[i].a = a[i];
-		splineSetVector[i].b = b[i];
-		splineSetVector[i].c = c[i];
-		splineSetVector[i].d = d[i];
-		splineSetVector[i].x = x[i];
-	}
 }
 
 void SplineManager::DrawConnectionBetweenNodes(ShaderProgram program)
@@ -245,24 +202,30 @@ void SplineManager::CalculatePointsBetweenControlPoints()
 {
 	totalList.clear();
 	insertedNodeList.clear();
-	for (unsigned int i = 0; i < splineSetVector.size(); ++i) {
-		SplineSet currentSet = splineSetVector[i];
-		float x = nodeList[i]->nodeLocation.x;
-		float xNext = nodeList[i + 1]->nodeLocation.x;
-		float xDistancePerInterval = (xNext - x) / INTERVAL;
-		totalList.push_back(nodeList[i]);
 
-		// Formula = s = a + b(x-xControl) + c(x-xcontrol)^2 + d(x-xcontrol)^3
-		for (int j = 1; j < INTERVAL; ++j) {
-			float pointX = x + (xDistancePerInterval * j);
-			vec3 point = GetPointAtX(pointX, currentSet);
-			totalList.push_back(new SplineNode(point));
-			insertedNodeList.push_back(new SplineNode(point));
-		}
+	if (nodeList.size() == 0) {
+		nodeList.push_back(new SplineNode());
+		nodeList.push_back(new SplineNode());
+	}else if (nodeList.size() == 1) {
+		nodeList.push_back(new SplineNode());
 	}
 
+	// First node
+	totalList.push_back(nodeList[0]);
+
+	// Calculate rest
+
+	for (float t = alpha; t < 1.0f; t+=alpha) {
+		totalList.push_back(SplineInterpolate(t));
+	}
+
+	for (float t = drawingAlpha; t < 1.0f; t += drawingAlpha) {
+		insertedNodeList.push_back(SplineInterpolate(t));
+	}
+
+	// last node
 	totalList.push_back(nodeList[nodeList.size() - 1]);
-	PrintVector(totalList);
+	//PrintVector(totalList);
 	
 }
 
@@ -291,5 +254,165 @@ void SplineManager::DrawSplinePoints(SplineNodeList const & pointsToDraw, vec3 c
 
 		myMesh->Draw(program);
 		++iter;
+	}
+}
+
+void SplineManager::CalculateFunction()
+{
+	// a values => cVal = 0, toThePowerOf = j
+	unsigned int j = 0;
+	for (; j < 4; ++j)
+	{
+		function.push_back(SplineElement(0, j, false));
+	}
+
+	//b values => cVal = j-3, toThePowerOf = 3;
+	for (; j < function.capacity(); ++j)
+	{
+		function.push_back(SplineElement(j - 3, 3, true));
+	}
+}
+
+void SplineManager::Derive(SplineElementList & functionToDerive)
+{
+	for (unsigned int i = 0; i < functionToDerive.size(); ++i)
+	{
+		float coefficient = functionToDerive[i].coefficient;
+		int toThePowerOf = functionToDerive[i].d;
+
+		coefficient *= toThePowerOf--;
+
+		functionToDerive[i].coefficient = coefficient;
+		functionToDerive[i].d = toThePowerOf < 0 ? 0 : toThePowerOf;
+	}
+}
+
+void SplineManager::CreateMatrix(Matrix & matrix)
+{
+	int i = 0;
+
+	//creating f(t) part
+	for (; i < MAX_POINT_AMOUNT; ++i)
+	{
+		for (int j = 0; j < MATRIX_SIZE; ++j)
+		{
+			matrix[i][j] = function[j].GetTValue(i);
+		}
+	}
+
+	//creating f''(0)
+	for (int j = 0; j < MATRIX_SIZE; ++j)
+	{
+		matrix[i][j] = secondDerivative[j].GetTValue(0);
+	}
+
+	++i;
+
+	//creating f''(k)
+	for (int j = 0; j < MATRIX_SIZE; ++j)
+	{
+		matrix[i][j] = secondDerivative[j].GetTValue(MAX_POINT_AMOUNT - 1);
+	}
+}
+
+SplineNode * SplineManager::SplineInterpolate(float t)
+{
+	float tInterval = t * (nodeList.size() - 1);
+
+	unsigned int size = nodeList.size();
+
+	Matrix matrixX(size + 2);
+	Matrix matrixY(size + 2);
+	for (unsigned int i = 0; i < matrixX.size(); ++i) {
+		matrixX[i].resize(size + 3);
+		matrixY[i].resize(size + 3);
+	}
+
+	unsigned int i = 0;
+	for (; i < size; ++i)
+	{
+		for (unsigned int j = 0; j < size + 2; ++j)
+		{
+			matrixX[i][j] = coeffMatrixX[i][j];
+			matrixY[i][j] = coeffMatrixY[i][j];
+		}
+	}
+
+	for (unsigned int k = 0; k < size + 2;++k)
+	{
+		matrixX[size][k] = coeffMatrixX[MAX_POINT_AMOUNT][k];
+		matrixX[size + 1][k] = coeffMatrixX[MAX_POINT_AMOUNT + 1][k];
+		matrixY[size][k] = coeffMatrixY[MAX_POINT_AMOUNT][k];
+		matrixY[size + 1][k] = coeffMatrixY[MAX_POINT_AMOUNT + 1][k];
+	}
+
+	for (unsigned int j = 0; j < size; ++j)
+	{
+		matrixX[j][size + 2] = nodeList[j]->nodeLocation.x;
+		matrixY[j][size + 2] = nodeList[j]->nodeLocation.z; //In our case, y's are z's
+	}
+
+	SolveMatrix(matrixX);
+	SolveMatrix(matrixY);
+
+	i = 0;
+	float x = 0, y = 0;
+	for (; i < size + 2; ++i)
+	{
+		x += function[i].GetTValue(tInterval) * matrixX[i][size + 2];
+		y += function[i].GetTValue(tInterval) * matrixY[i][size + 2];
+	}
+	return new SplineNode(x, 0.0f, y);
+
+}
+
+void SplineManager::SolveMatrix(Matrix & matrix)
+{
+	unsigned int row = matrix.size();
+	unsigned int cols = matrix[0].size();
+
+	for (unsigned int i = 0; i < (row - 1); i++)
+	{
+		if (fabsf(matrix[i][i]) < 0.0f)
+		{
+			for (unsigned int i2 = i + 1; i2 < row; i2++)
+			{
+				if (fabsf(matrix[i2][i2]) > 0.0f)
+				{
+					for (unsigned int j = 0; j < cols; j++)
+					{
+						float temp = matrix[i][j];
+						matrix[i][j] = matrix[i2][j];
+						matrix[i2][j] = temp;
+
+					}
+					break;
+				}
+			}
+		}
+		if (fabsf(matrix[i][i]) > 0.0f)
+		{
+			for (unsigned int i2 = i + 1; i2 < row; i2++)
+			{
+				float factor = -matrix[i2][i] / matrix[i][i];
+				for (unsigned int j = 0; j < cols; j++)
+				{
+					matrix[i2][j] = matrix[i2][j] + factor * matrix[i][j];
+				}
+			}
+		}
+	}
+
+	for (int r = row - 1; r >= 0; r--)
+	{
+		if (matrix[r][r] != 0)
+			matrix[r][cols - 1] /= matrix[r][r];
+		for (int r2 = r - 1; r2 >= 0; r2--)
+		{
+			if (matrix[r][r] != 0)
+			{
+				matrix[r2][cols - 1] -= (matrix[r2][r]) * matrix[r][cols - 1];
+			}
+		}
 	}
 }
