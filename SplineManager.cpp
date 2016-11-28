@@ -1,19 +1,54 @@
 #include "SplineManager.h"
 #include "GraphicsManager.h"
 #include "SkeletonNode.h"
+#include "Skeleton.h"
 #include "Mesh.h"
 #include "Types.h"
 #include "ArcLengthSegmentManager.h"
+#include "ModelManager.h"
+#include "TargetObject.h"
 
 #include <gtc/matrix_transform.hpp>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 
+#define DISTANCE_FROM_TARGET 1.0f
+
 SplineManager::SplineManager()
 {
-	//currentSplineNodeIndex = 0;
+	ModelManager* manager = ModelManager::Instance();
+	vec3 const & modelPosition = manager->GetCurrentModelPosition();
 
+	//currentSplineNodeIndex = 0;
+	// Magic numbers for nodes
+	InsertNode(new SplineNode(modelPosition.x, modelPosition.y, modelPosition.z));
+	/*InsertNode(new SplineNode(-3.0f, 0.0f, 0.0f));
+	InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
+	InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
+	InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
+	InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
+	InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
+	InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
+	InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
+	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));*/
+	
+	vec3 const & targetPosition = TargetObject::Instance()->Position();
+	vec3 targetPositionFinal;
+	if (!signbit(targetPosition.x)) {
+		targetPositionFinal.x = targetPosition.x - DISTANCE_FROM_TARGET;
+
+	}
+	else {
+		targetPositionFinal.x = targetPosition.x + DISTANCE_FROM_TARGET;
+		targetPositionFinal.z = targetPosition.z + DISTANCE_FROM_TARGET;
+	}
+
+	InsertNode(new SplineNode(targetPositionFinal.x, 0, targetPosition.z));
+
+ 	steps = static_cast<float>((nodeList.size() - 1) * INTERVAL);
+	drawingAlpha = 1.0f / steps;
+	alpha = 0.5f;
 }
 
 SplineManager* SplineManager::instance;
@@ -35,22 +70,6 @@ SplineManager::~SplineManager()
 
 void SplineManager::BuildSpline() 
 {
-	// Magic numbers for nodes
-	InsertNode(new SplineNode(-10.0f, 0.0f, 0.0f));
-	InsertNode(new SplineNode(-3.0f, 0.0f, 0.0f));
-	/*InsertNode(new SplineNode(-4.0f, 0.0f, 5.0f));
-	InsertNode(new SplineNode(-2.0f, 0.0f, 3.0f));
-	InsertNode(new SplineNode(0.0f, 0.0f, 1.0f));
-	InsertNode(new SplineNode(3.0f, 0.0f, 2.0f));
-	InsertNode(new SplineNode(5.0f, 0.0f, -2.0f));
-	InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
-	InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
-	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));*/
-
-
-	steps = static_cast<float>((nodeList.size()-1) * INTERVAL);
-	drawingAlpha = 1.0f / steps;
-	alpha = 0.005f;
 	//PrintVector(nodeList);
 	// Actual spline calculation
 	Spline();
@@ -61,7 +80,6 @@ void SplineManager::BuildSpline()
 
 void SplineManager::DrawSpline(ShaderProgram program)
 {
-
 	vec3 nodeColor(1.0f, 0.0f, 1.0f);
 	vec3 scale(2.0f);
 	DrawSplinePoints(nodeList, nodeColor, scale, program);
@@ -81,20 +99,22 @@ void SplineManager::RelocateRootNode(SkeletonNode* rootNode, float u)
 {
 	// Use u to calculate it's position on the spline
  	glm::vec3 targetPos = GetPointAtParametricValue(u);
-	rootNode->transformVQS.translate = targetPos;
-
+	rootNode->globalVQS.translate = targetPos;
 }
 
 float SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime, int totalTime, bool continuous)
 {
+	long duration = totalTime;
 	// Hackish timer resetting, wohoo!
-	velocityTimer += static_cast<float>(deltaTime / TOTAL_ANIMATION_IN_SECONDS);
+	float incrementAmount = static_cast<float>(deltaTime / (duration));
+	velocityTimer += incrementAmount;
 	if (velocityTimer > 1.0f) {
 		velocityTimer = continuous ? 0.0f : 1.0f;
 		isAnimationFinished = true;
 	}
 	ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
-	if (!isAnimationFinished) {
+
+	if (continuous || !isAnimationFinished) {
 		// calculate s from t
 		float arcLength = segmentManager->GetArcLengthUsingTime(velocityTimer);
 		// calculate u from s
@@ -103,13 +123,13 @@ float SplineManager::AdvanceOnSpline(SkeletonNode* rootNode, double deltaTime, i
 		RelocateRootNode(rootNode, paramVal);
 
 		// Get the next location using the future time
-		float nextTime = static_cast<float>(velocityTimer + (deltaTime / TOTAL_ANIMATION_IN_SECONDS));
+		float nextTime = static_cast<float>(velocityTimer + incrementAmount);
 		float nextArcLength = segmentManager->GetArcLengthUsingTime(nextTime);
 		paramVal = segmentManager->FindParametricValue(nextArcLength);
 
 		// Get the target of the next location and look at it
 		vec3 target = GetPointAtParametricValue(paramVal);
-		rootNode->LookAt(target);
+		rootNode->LookAt(target);	
 	}
 	
 	return segmentManager->GetVelocity(velocityTimer);
@@ -130,6 +150,21 @@ glm::vec3 SplineManager::GetPointAtParametricValue(float u)
 
 	float delta = (u / alpha) - index;
 	return (nextLoc * delta + prevLoc * (1 - delta));
+}
+
+void SplineManager::TargetObjectNewMoved(vec3 const & newPosition)
+{ 
+	Skeleton* skeleton = ModelManager::Instance()->CurrentAnimation()->skeleton;
+ 	SplineNode* lastNode = nodeList.back();
+	//SplineNode* firstNode = nodeList.front();
+	//firstNode->nodeLocation = skeleton->GetJoint(0)->localVQS.translate;
+	lastNode->nodeLocation.x = newPosition.x - DISTANCE_FROM_TARGET;
+
+	CalculatePointsBetweenControlPoints();
+	skeleton->ResetAllNodes();
+
+	isAnimationFinished = false;
+	velocityTimer = 0.0f;
 }
 
 // #GodBlessWikipedia

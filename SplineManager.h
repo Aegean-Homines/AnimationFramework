@@ -8,7 +8,7 @@
 #define MAX_POINT_AMOUNT 20
 #define MATRIX_SIZE MAX_POINT_AMOUNT+2
 #define INTERVAL 10
-#define TOTAL_ANIMATION_IN_SECONDS 4000
+#define TOTAL_ANIMATION_IN_SECONDS 1000
 
 using glm::vec3;
 using std::vector;
@@ -87,6 +87,8 @@ public:
 	bool isAnimationFinished = false;
 	// Gets the physical translate value using the u value
 	glm::vec3 GetPointAtParametricValue(float u);
+
+	void TargetObjectNewMoved(vec3 const & newPosition);
 private:
 	SplineNodeList nodeList;
 	SplineNodeList insertedNodeList;

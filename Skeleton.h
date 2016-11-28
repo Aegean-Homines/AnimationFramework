@@ -1,13 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <glm.hpp>
-
-#include "Types.h"
-#include "ShaderProgram.h"
 
 using std::vector;
-using glm::vec3;
 
 class SkeletonNode;
 
@@ -17,10 +12,13 @@ public:
 	Skeleton();
 	~Skeleton();
 
-	void AddSkeletonNode(vec3 translate, vec3 rotate, vec3 scale, MeshType meshType);
-	void Draw(ShaderProgram const & program, int frame, float interpolationAmount);
+	void RegisterJoint(SkeletonNode* newNode);
+	SkeletonNode* GetJoint(unsigned int index);
+	SkeletonNode* GetRoot();
+	void CalculateAllTransformsUsingIK();
+	void ResetAllNodes();
 private:
-	vector<SkeletonNode*> skeletonNodes;
+	vector<SkeletonNode*> skeleton;
 
 };
 

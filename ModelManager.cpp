@@ -1,15 +1,18 @@
 #include "ModelManager.h"
 #include "EventManager.h"
-#include "SkeletonNode.h"
 #include "SplineManager.h"
+#include "SkeletonNode.h"
+#include "Skeleton.h"
 #include "VQS.h"
 
 #include <glfw3.h>
 #include <iostream>
+#include <string>
 
 #define FRAME_RATE_MODE FbxTime::eDefaultMode
 #define PI 3.14159265359f
 #define TRANSLATE_AMOUNT 1.0f
+#define NO_MODEL_NODE_CHAIN_LENGTH 6
 
 using std::cout;
 using std::endl;
@@ -58,10 +61,10 @@ void ModelManager::CreateFbxScene(const char* sceneName, const char* fileName)
 		exit(-1);
 	}
 
-	AnimationDefinition* definition = new AnimationDefinition();
+
 	FbxScene* fbxScene = FbxScene::Create(fbxManager, sceneName);
-	definition->fbxScene = fbxScene;
-	definitionMap.insert(std::pair<std::string, AnimationDefinition*>(sceneName, definition));
+	currentAnimation->fbxScene = fbxScene;
+
 
 	if (!importer->Import(fbxScene)) {
 		cout << "Importing failed!" << endl;
@@ -74,11 +77,25 @@ void ModelManager::CreateFbxScene(const char* sceneName, const char* fileName)
 
 void ModelManager::InitializeModel(std::string const & modelName, std::string const & modelFileName,float scale /*= 1.0f*/, glm::vec3 const & color /*= vec3(1.0f)*/)
 {
-	CreateFbxScene(modelName.c_str(), modelFileName.c_str());
-	CreateTree(modelName);
+	AnimationDefinition* definition = new AnimationDefinition();
+	definitionMap.insert(std::pair<std::string, AnimationDefinition*>(modelName, definition));
 	CurrentAnimation(modelName);
+
+	if (modelName == "") {
+		CreateTree();
+	}
+	else {
+		CreateFbxScene(modelName.c_str(), modelFileName.c_str());
+		CreateTree(modelName);
+	}
+	
 	ScaleSkeleton(modelName, scale);
 	ChangeSkeletonColor(color);
+}
+
+void ModelManager::SetIK(bool isIK)
+{
+	currentAnimation->isUsingIK = isIK;
 }
 
 void ModelManager::CreateTree(std::string const & modelName)
@@ -86,8 +103,11 @@ void ModelManager::CreateTree(std::string const & modelName)
 	AnimationDefinition* definition = definitionMap[modelName];
 	FbxScene* fbxScene = definition->fbxScene;
 	FbxNode* fbxRootNode = fbxScene->GetRootNode();
+	Skeleton* skeleton = new Skeleton();
+	definition->skeleton = skeleton;
+
 	SkeletonNode* rootNode = new SkeletonNode();
-	definition->rootNode = rootNode;
+	skeleton->RegisterJoint(rootNode);
 
 	// Get Animation Duration
 	FbxAnimStack* animStack = fbxScene->GetSrcObject<FbxAnimStack>(0);
@@ -99,6 +119,28 @@ void ModelManager::CreateTree(std::string const & modelName)
 		for (int i = 0; i < fbxRootNode->GetChildCount(); ++i)
 			InsertNode(fbxRootNode->GetChild(i), fbxScene, rootNode);
 	}
+	else {
+		CreateTree();
+	}
+
+}
+
+void ModelManager::CreateTree()
+{
+	Skeleton* skeleton = new Skeleton();
+	currentAnimation->skeleton = skeleton;
+	SkeletonNode* rootNode = new SkeletonNode();
+	skeleton->RegisterJoint(rootNode);
+
+	// Get Animation Duration
+	currentAnimation->animationDuration.SetMilliSeconds(1000);
+
+	rootNode->Name("NoModel");
+
+	InsertNode(1, rootNode);
+
+	/*rootNode->CalculateAllTransforms(0.0f);
+	rootNode->MoveAllToWorldSpace();*/
 
 }
 
@@ -117,6 +159,7 @@ void ModelManager::InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* p
 	// Get data from fbx
 	const char* nodeName = fbxNode->GetName();
 	SkeletonNode* child = parent->AddSkeletonNode(MeshType::CUBE, nodeName);
+	currentAnimation->skeleton->RegisterJoint(child);
 
 	// Fill animation table of the child with time-animation pairs
 	FillAnimationTable(child, scene, fbxNode);
@@ -127,41 +170,63 @@ void ModelManager::InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* p
 
 }
 
+void ModelManager::InsertNode(int currentLevel, SkeletonNode* parent)
+{
+	if (currentLevel > NO_MODEL_NODE_CHAIN_LENGTH) {
+		return;
+	}
+
+	// Custom name
+	const char* nodeName = (parent->Name() + std::to_string(currentLevel)).c_str();
+	SkeletonNode* child = parent->AddSkeletonNode(MeshType::CUBE, nodeName);
+	currentAnimation->skeleton->RegisterJoint(child);
+	// Goes upwards always
+	VQS & parentVQS = parent->globalVQS;
+	vec3 childTranslate(0.0f);
+	childTranslate.y = 0.5f;
+	child->localVQS = VQS(childTranslate, Quaternion());
+	child->initialVQS = child->localVQS;
+	child->ToWorldSpace();
+
+	// Recursively process other children
+	InsertNode(++currentLevel, child);
+
+}
+
+glm::vec3 const & ModelManager::GetCurrentModelPosition()
+{
+	Skeleton* skeleton = currentAnimation->skeleton;
+	if (skeleton && skeleton->GetRoot()) {
+		return skeleton->GetRoot()->globalVQS.translate;
+	}
+
+	std::cout << "Model doesn't have a root node" << std::endl;
+	return vec3(0.0f);
+}
+
 void ModelManager::ScaleSkeleton(std::string const & sceneName, float scalingFactor)
 {
 	AnimationDefinition* definition = definitionMap[sceneName];
-	definition->rootNode->ScaleSkeleton(scalingFactor);
+	Skeleton* skeleton = definition->skeleton;
+	if (skeleton && skeleton->GetRoot())
+		skeleton->GetRoot()->ScaleSkeleton(scalingFactor);
 }
 
 void ModelManager::ChangeSkeletonColor(glm::vec3 const & colorValue, bool byLevel /*= false*/)
 {
-	if (byLevel)
-		currentAnimation->rootNode->ColorSkeletonByLevel(colorValue);
-	else
-		currentAnimation->rootNode->ColorSkeletonUniformly(colorValue);
+	Skeleton* skeleton = currentAnimation->skeleton;
+	if (skeleton && skeleton->GetRoot()) {
+		if (byLevel)
+			skeleton->GetRoot()->ColorSkeletonByLevel(colorValue);
+		else
+			skeleton->GetRoot()->ColorSkeletonUniformly(colorValue);
+	}
+
 }
 
-void ModelManager::Update()
+void ModelManager::ResetSkeleton()
 {
-	vec3 & rootTranslate = currentAnimation->rootNode->transformVQS.translate;
-	if(EventManager::IsKeyTriggered(GLFW_KEY_UP)){
-		rootTranslate.z -= TRANSLATE_AMOUNT;
-	}
-	if (EventManager::IsKeyTriggered(GLFW_KEY_DOWN)) {
-		rootTranslate.z += TRANSLATE_AMOUNT;
-	}
-	if (EventManager::IsKeyTriggered(GLFW_KEY_RIGHT)) {
-		rootTranslate.x += TRANSLATE_AMOUNT;
-	}
-	if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT)) {
-		rootTranslate.x -= TRANSLATE_AMOUNT;
-	}
-	
-	if (EventManager::IsKeyTriggered(GLFW_KEY_T)) {
-		
-
-	}
-
+	Skeleton* skeleton = currentAnimation->skeleton;
 }
 
 // Helper functions

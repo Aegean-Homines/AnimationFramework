@@ -3,6 +3,8 @@
 #include "GraphicsManager.h"
 #include "EventManager.h"
 #include "ModelManager.h"
+#include "TargetObject.h"
+
 #include <glew.h>
 #include <glfw3.h>
 
@@ -44,8 +46,8 @@ void EngineHelper::Update()
 		EventManager::UpdateEvents();
 		WindowManager::Update();
 
-		// Model
-		ModelManager::Instance()->Update();
+		// Target Object
+		TargetObject::Instance()->Update();
 
 		GraphicsManager::Update();
 		GraphicsManager::Render();

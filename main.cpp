@@ -22,10 +22,11 @@ using std::string;
 const string ModelMainDirectory = "Models/";
 const string TadModelName = "Tad";
 const string RunningModelName = "running_inPlace";
+const string NoModel = "";
 const string FbxExtension = ".fbx";
 
 void main(){
-	string CurrentModelName = RunningModelName;
+	string CurrentModelName = NoModel;
 	EngineHelper::InitializeGLFW(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, false);
 	WindowManager::InitializeWindow(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME);
 	EventManager::InitializeEvents();
@@ -35,10 +36,10 @@ void main(){
 	GraphicsManager::InitializeData();
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
-	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 0.025f, vec3(0.2f, 0.1f, 1.0f));
-
+	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 1.025f, vec3(0.2f, 0.1f, 1.0f));
+	manager->SetIK(true);
 	// Create the spline data
-	SplineManager* splineManager = SplineManager::Instance();
+ 	SplineManager* splineManager = SplineManager::Instance();
 	splineManager->BuildSpline();
 
 	// Calculate arc-length

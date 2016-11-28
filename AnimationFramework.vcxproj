@@ -171,8 +171,10 @@
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SkeletonNode.cpp" />
     <ClCompile Include="SplineManager.cpp" />
+    <ClCompile Include="TargetObject.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="VQS.cpp" />
@@ -189,8 +191,10 @@
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SkeletonNode.h" />
     <ClInclude Include="SplineManager.h" />
+    <ClInclude Include="TargetObject.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VAO.h" />

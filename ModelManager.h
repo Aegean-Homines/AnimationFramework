@@ -3,17 +3,19 @@
 #include <unordered_map>
 #include <glm.hpp>
 
+class Skeleton;
 class SkeletonNode;
 
 struct AnimationDefinition {
-	FbxScene* fbxScene;
-	SkeletonNode* rootNode;
-	FbxTime animationDuration;
-
-	AnimationDefinition(FbxScene* fbxScene = nullptr, SkeletonNode* rootNode = nullptr, int animationDuration = 0)
+public:
+	AnimationDefinition(FbxScene* fbxScene = nullptr, Skeleton* skeleton = nullptr, int animationDuration = 0, bool isUsingIK = false)
 		:
-		fbxScene(fbxScene), rootNode(rootNode), animationDuration(animationDuration)
+		fbxScene(fbxScene), skeleton(skeleton), animationDuration(animationDuration), isUsingIK(isUsingIK)
 	{}
+	FbxScene* fbxScene;
+	Skeleton* skeleton;
+	FbxTime animationDuration;
+	bool isUsingIK;
 };
 
 typedef std::unordered_map<std::string, AnimationDefinition*> AnimationDefinitionMap;
@@ -29,23 +31,24 @@ public:
 	void CreateFbxManager();
 	void CreateFbxScene(const char* sceneName, const char* fileName);
 	void InitializeModel(std::string const & modelName, std::string const & modelFileName, float scale = 1.0f, glm::vec3 const & color = glm::vec3(1.0f));
-
+	void SetIK(bool isIK);
 	// recursively create the tree
 	void CreateTree(std::string const & modelName);
+	void CreateTree();
 
 	// Recursive part of creating the tree of nodes
 	void InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* parent);
+	void InsertNode(int currentLevel, SkeletonNode* parent);
 
 	AnimationDefinition* CurrentAnimation() const { return currentAnimation; }
 	void CurrentAnimation(AnimationDefinition* val) { currentAnimation = val; }
 	AnimationDefinition* GetAnimationDefinition(std::string const & sceneName) { return definitionMap[sceneName]; }
 	void CurrentAnimation(std::string const &  sceneName) { currentAnimation = definitionMap[sceneName]; }
+	glm::vec3 const & GetCurrentModelPosition();
 
 	void ScaleSkeleton(std::string const & sceneName, float scalingFactor);
 	void ChangeSkeletonColor(glm::vec3 const & colorValue, bool byLevel = false);
-
-	// Function for handling input etc for the animation
-	void Update();
+	void ResetSkeleton();
 private:
 	// Variables
 	FbxManager* fbxManager;

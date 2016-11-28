@@ -19,7 +19,7 @@ void ArcLengthSegmentManager::InitializeContainers()
 {
 	mySegmentList = SegmentList();
 	myArcLengthTable.clear();
-
+	myArcLengthReverseTable.clear();
 	// push the entire curve
 	mySegmentList.push(std::make_pair(0.0f, 1.0f));
 	// Initial entry at ua
@@ -123,6 +123,11 @@ void ArcLengthSegmentManager::FillSegmentationTable(float arcLengthErrorThreshol
 
 ParametricValue ArcLengthSegmentManager::FindParametricValue(ArcLength s)
 {
+	if (s > 1.0f)
+		s = 1.0f;
+	else if (s < 0.0f)
+		s = 0.0f;
+
 	// returns either s or higher
 	//upper_bound and lower_bound use binary search
 	ArcLengthReverseTable::iterator iter = myArcLengthReverseTable.upper_bound(s);

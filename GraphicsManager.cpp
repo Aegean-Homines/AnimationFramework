@@ -4,10 +4,11 @@
 #include "SkeletonNode.h"
 #include "ModelManager.h"
 #include "SplineManager.h"
+#include "Skeleton.h"
 
 #include <glew.h>
-#include <glfw3.h>
 #include <glm.hpp>
+#include <glfw3.h>
 #include <gtc/matrix_transform.hpp>
 
 #include <iostream>
@@ -15,10 +16,12 @@
 #define CUBE_SCALE 0.03f
 #define PI 3.14159265359f
 const float angleMultiplication = (PI / 180.0f);
+float targetObjectDeltaPosition = 0.5f;
+
 using glm::vec3;
 using std::vector;
 
-const bool continuousAnimation = true;
+const bool continuousAnimation = false;
 
 std::string shaderLocation = "Shaders/";
 std::string vertexShaderSuffix = ".vert";
@@ -75,30 +78,7 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 
 void GraphicsManager::DrawTarget(ShaderProgram & program)
 {
-	Mesh* myMesh = GraphicsManager::GetMesh(CUBE);
-
-	// Reset matrix to identity
-	glm::mat4 worldTransformation = mat4(1.0f);
-	// Translate, rotate and scale
-
-	vec3 translate = vec3(-1.0f, 3.0f, 0.0f);
-	vec3 rotate = vec3(0.0f, 0.0f, 0.0f);
-	vec3 scale = vec3(2.0f);
-	vec3 meshColor(1.0f, 1.0f, 1.0f);
-
-	worldTransformation = glm::translate(worldTransformation, translate);
-	worldTransformation = glm::rotate(worldTransformation, rotate.z * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.y * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.x * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
-	worldTransformation = glm::scale(worldTransformation, scale);
-
-	GLint transformLocation = glGetUniformLocation(program.program, "Transform");
-	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &(worldTransformation[0][0]));
-
-	GLint colorLocation = glGetUniformLocation(program.program, "Color");
-	glUniform3fv(colorLocation, 1, &meshColor[0]);
-
-	myMesh->Draw(program);
+	TargetObject::Instance()->Draw(program);
 }
 
 float GraphicsManager::deltaTime;
@@ -147,15 +127,16 @@ void GraphicsManager::Render()
 	SplineManager* splineManager = SplineManager::Instance();
 	ModelManager* modelManager = ModelManager::Instance();
 	AnimationDefinition* definition = modelManager->CurrentAnimation();
-	SkeletonNode* rootNode = definition->rootNode;
+	Skeleton* skeleton = definition->skeleton;
+	SkeletonNode* rootNode = skeleton->GetRoot();
 	FbxLongLong totalTime = definition->animationDuration.GetMilliSeconds();
-	
-	float deltaTimeInMs = deltaTime * 1000.0f;
-	
+
+	float deltaTimeInMs =  deltaTime * 1000.0f;
+
 	float velocity = splineManager->AdvanceOnSpline(rootNode, deltaTimeInMs, totalTime, continuousAnimation);
 	elapseTime += (deltaTimeInMs * velocity);
 	if (elapseTime > totalTime) {
-		if (splineManager->isAnimationFinished) {
+		if (!continuousAnimation && splineManager->isAnimationFinished) {
 			elapseTime = totalTime;
 		}
 		else {
@@ -164,6 +145,12 @@ void GraphicsManager::Render()
 
 	}
 		
+	// Calculate transformations
+	if(!definition->isUsingIK) //If not using IK, use FBX anim data
+		rootNode->CalculateAllTransforms(elapseTime);
+	else //If using IK, calculate transforms for each joint
+		skeleton->CalculateAllTransformsUsingIK();
+
 	// draw skeleton
 	rootNode->Draw(simpleShader, elapseTime);
 
@@ -317,6 +304,13 @@ void GraphicsManager::InitializeData()
 
 	Mesh* lineMesh = new Mesh(vertices, indices, GL_LINES);
 	meshMap.insert(std::pair<MeshType, Mesh*>(LINE, lineMesh));
+
+	TargetObject* instance = TargetObject::Instance();
+	instance->SetMesh(GetMesh(CUBE));
+	instance->SetPosition(vec3(8.0f, 2.0f, 0.0f));
+	instance->SetRotation(vec3(0.0f * angleMultiplication));
+	instance->ScaleObject(vec3(1.0f));
+	instance->SetColor(vec3(0.4f, 1.0, 0.1f));
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)

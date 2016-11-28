@@ -8,6 +8,7 @@
 #include "Types.h"
 #include "Camera.h"
 #include "SkeletonNode.h"
+#include "TargetObject.h"
 
 typedef std::unordered_map<MeshType, Mesh*> MeshMap;
 

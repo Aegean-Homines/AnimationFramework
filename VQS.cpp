@@ -7,6 +7,7 @@ VQS::VQS(vec3 const & translate, Quaternion const & quaternion, float scalar):
 VQS::VQS()
 {
 	translate = vec3(0.0f);
+	rotate = Quaternion();
 	scalar = 1.0f; // Since all scalar is 1.0f by default, I'm just setting it here
 }
 

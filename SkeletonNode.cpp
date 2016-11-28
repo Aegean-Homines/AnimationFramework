@@ -34,25 +34,15 @@ SkeletonNode::~SkeletonNode()
 
 void SkeletonNode::Draw(ShaderProgram const & program, float elapseTime)
 {
-	// I'm using these in case I want to debug something
-	/* 
-	bool j, k, l;
-	j = EventManager::IsKeyPressed(GLFW_KEY_J);
-	k = EventManager::IsKeyPressed(GLFW_KEY_K);
-	l = EventManager::IsKeyPressed(GLFW_KEY_L);*/
-
 	if (parent != NULL) {
 		Mesh* myMesh = GraphicsManager::GetMesh(meshType);
-			 
-		CalculateTransformVQS(elapseTime);
 
 		// Get parent transform VQS and concat with my current one to find its place in world coords
-		VQS& parentTransform = parent->transformVQS;
- 		transformVQS = parentTransform * transformVQS;
+		ToWorldSpace();
 
 		// Get matrix data from VQS to find node's final position in world coords
 		mat4 worldTransformation(1.0f);
-		worldTransformation = glm::translate(worldTransformation, transformVQS.translate);
+		worldTransformation = glm::translate(worldTransformation, globalVQS.translate);
 
 		// Send matrix to the GPU for rendering purposes
 		GLint transformLocation = glGetUniformLocation(program.program, "Transform");
@@ -67,7 +57,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, float elapseTime)
 		DrawLinesBetweenNodes(program);
 	}
 	else {
-		mat4 worldTransformation = glm::translate(mat4(1.0f), transformVQS.translate);
+		mat4 worldTransformation = glm::translate(mat4(1.0f), globalVQS.translate);
 		vec3 myTranslate = vec3(worldTransformation[3][0], worldTransformation[3][1], worldTransformation[3][2]);
 
 		vec3 targetPoint = myTranslate + forwardVector;
@@ -79,12 +69,28 @@ void SkeletonNode::Draw(ShaderProgram const & program, float elapseTime)
 		children[i]->Draw(program, elapseTime);
 	}
 
-	
 }
 
 void SkeletonNode::AddSkeletonNode(SkeletonNode* child)
 {
 	children.push_back(child);
+}
+
+void SkeletonNode::ToWorldSpace()
+{
+	VQS& parentTransform = parent->globalVQS;
+ 	globalVQS = parentTransform * localVQS;
+}
+
+void SkeletonNode::MoveAllToWorldSpace()
+{
+	if (parent) {
+		ToWorldSpace();
+	}
+
+	for (unsigned int i = 0; i < children.size(); ++i) {
+		children[i]->MoveAllToWorldSpace();
+	}
 }
 
 SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const & nodeName /*= ""*/)
@@ -99,6 +105,19 @@ SkeletonNode* SkeletonNode::AddSkeletonNode(MeshType meshType, std::string const
 	return node;
 }
 
+void SkeletonNode::SetVQSAtIndex(int index, VQS const & vqs)
+{
+	if (index >= transformationMap.size())
+		return;
+
+	transformationMap[index] = vqs;
+}
+
+VQS & SkeletonNode::GetVQSAtIndex(int index)
+{
+	return transformationMap[index];
+}
+
 void SkeletonNode::Insert(int keyFrameTime, VQS transformation)
 {
 	transformationMap[keyFrameTime] = transformation;
@@ -106,7 +125,7 @@ void SkeletonNode::Insert(int keyFrameTime, VQS transformation)
 
 void SkeletonNode::ScaleSkeleton(float scalingFactor)
 {
-	transformVQS.scalar = scalingFactor; //sort of cheating
+	globalVQS.scalar = scalingFactor; //sort of cheating
 }
 
 void SkeletonNode::ColorSkeletonUniformly(vec3 const & color)
@@ -134,7 +153,7 @@ void SkeletonNode::DrawLineToPoint(ShaderProgram const & program, vec3 const & p
 	GLint colorLocation = glGetUniformLocation(program.program, "Color");
 	glUniform3fv(colorLocation, 1, &color[0]);
 
-	mat4 worldTransformation = glm::translate(mat4(1.0f), transformVQS.translate);
+	mat4 worldTransformation = glm::translate(mat4(1.0f), globalVQS.translate);
 
 	std::vector<Vertex> newVertices;
 	vec3 myTranslate = vec3(worldTransformation[3][0], worldTransformation[3][1], worldTransformation[3][2]);
@@ -148,16 +167,16 @@ void SkeletonNode::DrawLineToPoint(ShaderProgram const & program, vec3 const & p
 
 bool SkeletonNode::LookAt(vec3 const & targetLocation)
 {
-	if (transformVQS.translate == targetLocation)
+	if (globalVQS.translate == targetLocation)
 		return false;
 
  	vec3 nodeNormalizedForward = glm::normalize(forwardVector);
-	vec3 newForward = glm::normalize(targetLocation - transformVQS.translate);
+	vec3 newForward = glm::normalize(targetLocation - globalVQS.translate);
 
 	float dotProduct = glm::dot(nodeNormalizedForward, newForward);
 	// Opposite dir test
 	if (abs(dotProduct - (-1.0f)) < EPSILON_TEST) {
-		transformVQS.rotate = Quaternion(upVector, 180.0f) * transformVQS.rotate;
+		globalVQS.rotate = Quaternion(upVector, 180.0f) * globalVQS.rotate;
 		return true;
 	}
 	// Same dir test
@@ -171,7 +190,7 @@ bool SkeletonNode::LookAt(vec3 const & targetLocation)
 	rotationAxis = glm::normalize(rotationAxis);
 
 	Quaternion rotationQuat(rotationAxis, rotationAngle);
-	transformVQS.rotate = rotationQuat * transformVQS.rotate;
+	globalVQS.rotate = rotationQuat * globalVQS.rotate;
 
 	// update forward vector
 	forwardVector = glm::normalize(newForward);
@@ -186,7 +205,7 @@ void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 	if (parent == NULL)
 		return;
 
-	mat4 parentTransform = glm::translate(mat4(1.0f), parent->transformVQS.translate);
+	mat4 parentTransform = glm::translate(mat4(1.0f), parent->globalVQS.translate);
 	vec3 parentTranslate = vec3(parentTransform[3][0], parentTransform[3][1], parentTransform[3][2]);
 
 	DrawLineToPoint(program, parentTranslate);
@@ -197,13 +216,20 @@ void SkeletonNode::CalculateTransformVQS(float time)
 {
 	AnimationTransformationMap::iterator current = transformationMap.begin();
 	AnimationTransformationMap::iterator next = current;
-	++next;
+
+	if (next == transformationMap.end()) {
+		//No animation data exists
+		return;
+	}
+		
+
+	++next; 
 
 	while (next != transformationMap.end()) {
 
 		if (current->first <= time && next->first > time) {
 			float interpolationAmount = (time - current->first) / (next->first - current->first);
-			transformVQS = VQS::Slerp(current->second, next->second, interpolationAmount);
+			localVQS = VQS::Slerp(current->second, next->second, interpolationAmount);
 			return;
 		}
 
@@ -211,6 +237,13 @@ void SkeletonNode::CalculateTransformVQS(float time)
 		++current;
 	}
 
-	transformVQS = current->second;
+	localVQS = current->second;
 
+}
+
+void SkeletonNode::CalculateAllTransforms(float time)
+{
+	CalculateTransformVQS(time);
+	for (unsigned int i = 0; i < children.size(); ++i)
+		children[i]->CalculateAllTransforms(time);
 }
