@@ -10,6 +10,8 @@ vector<bool> EventManager::prevKeys;
 
 double EventManager::mouseDeltaX;
 double EventManager::mouseDeltaY;
+double EventManager::wheelOffsetX;
+double EventManager::wheelOffsetY;
 double EventManager::lastX;
 double EventManager::lastY;
 
@@ -26,6 +28,7 @@ EventManager::~EventManager()
 void EventManager::UpdateEvents()
 {
 	mouseDeltaX = mouseDeltaY = 0;
+	wheelOffsetX = wheelOffsetY = 0;
 	prevKeys = keys;
 	glfwPollEvents();
 }
@@ -35,6 +38,7 @@ void EventManager::InitializeEvents()
 	glfwSetKeyCallback(WindowManager::GetWindow(), &EventManager::KeyboardEventCallback);
 	glfwSetCursorPosCallback(WindowManager::GetWindow(), &EventManager::MouseEventCallback);
 	glfwSetMouseButtonCallback(WindowManager::GetWindow(), &EventManager::MouseButtonEventCallback);
+	glfwSetScrollCallback(WindowManager::GetWindow(), &EventManager::MouseWheelEventCallback);
 	keys.resize(GLFW_KEY_LAST, false);
 	prevKeys.resize(GLFW_KEY_LAST, false);
 
@@ -97,4 +101,10 @@ void EventManager::MouseButtonEventCallback(GLFWwindow* window, int button, int 
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE)
 			mouseButtons[MIDDLE] = false;
 	}
+}
+
+void EventManager::MouseWheelEventCallback(GLFWwindow * window, double xoffset, double yoffset)
+{
+	wheelOffsetX = xoffset;
+	wheelOffsetY = yoffset;
 }

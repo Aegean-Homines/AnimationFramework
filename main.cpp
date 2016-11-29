@@ -36,7 +36,7 @@ void main(){
 	GraphicsManager::InitializeData();
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
-	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 1.025f, vec3(0.2f, 0.1f, 1.0f));
+	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 1.0f, vec3(0.2f, 0.1f, 1.0f));
 	manager->SetIK(true);
 	// Create the spline data
  	SplineManager* splineManager = SplineManager::Instance();

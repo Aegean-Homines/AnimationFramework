@@ -156,9 +156,10 @@ void SplineManager::TargetObjectNewMoved(vec3 const & newPosition)
 { 
 	Skeleton* skeleton = ModelManager::Instance()->CurrentAnimation()->skeleton;
  	SplineNode* lastNode = nodeList.back();
-	//SplineNode* firstNode = nodeList.front();
-	//firstNode->nodeLocation = skeleton->GetJoint(0)->localVQS.translate;
-	lastNode->nodeLocation.x = newPosition.x - DISTANCE_FROM_TARGET;
+	SplineNode* firstNode = nodeList.front();
+	firstNode->nodeLocation = skeleton->GetJoint(0)->globalVQS.translate;
+	lastNode->nodeLocation.x = newPosition.x;
+	lastNode->nodeLocation.z = newPosition.z;
 
 	CalculatePointsBetweenControlPoints();
 	skeleton->ResetAllNodes();

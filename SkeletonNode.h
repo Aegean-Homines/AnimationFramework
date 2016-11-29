@@ -37,6 +37,11 @@ public:
 	void Name(std::string name) { nodeName = name; }
 	void SetVQSAtIndex(int index, VQS const & vqs);
 	VQS & GetVQSAtIndex(int index);
+	float GetDampening() { return dampening; }
+	float GetMinAngle() { return minRotation; }
+	float GetMaxAngle() { return maxRotation; }
+	mat4 GetWorldTransform();
+	mat4 GetLocalTransform();
 
 	void Insert(int keyFrameTime, VQS transformation);
 	void ScaleSkeleton(float scalingFactor);
@@ -53,6 +58,8 @@ public:
 	VQS localVQS;
 	VQS initialVQS; //For reseting the skeleton
 	int level;
+
+	mat4 transformMatrix;
 private:
 	// DATA
 	MeshType meshType;
@@ -63,6 +70,10 @@ private:
 	vec3 nodeColor;
 	vec3 forwardVector;
 	vec3 upVector;
+
+	float dampening;
+	float minRotation;
+	float maxRotation;
 	// HELPER METHODS
 	void DrawLinesBetweenNodes(ShaderProgram const & program);
 

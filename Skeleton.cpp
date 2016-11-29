@@ -3,15 +3,15 @@
 #include "TargetObject.h"
 #include "Quaternion.h"
 #include "VQS.h"
+#include "AngleMath.h"
 
 #include <glm.hpp>
+#include <iostream>
 
 using glm::vec3;
 
-#define MIN_DISTANCE_TO_TARGET 0.1f
-#define DELTA_EPSILON_FOR_END_EFFECTOR 0.001f
-#define PI 3.14159265359f
-#define MIN_ANGLE (PI/360.0f)
+#define MIN_DISTANCE_TO_TARGET 0.01f
+#define DELTA_EPSILON_FOR_END_EFFECTOR 0.01f
 
 Skeleton::Skeleton()
 {
@@ -59,7 +59,7 @@ void Skeleton::CalculateAllTransformsUsingIK()
 		return;
 
 	// Local space to world space
-	skeleton[1]->MoveAllToWorldSpace();
+	skeleton[0]->MoveAllToWorldSpace();
 
 	// Get the node before the last one
 	// Last one is the end effector
@@ -75,33 +75,67 @@ void Skeleton::CalculateAllTransformsUsingIK()
 	// Vdk = vector from k'th joint to Pd
 	vec3 Vck, Vdk;
 	vec3 Plast;
+
 	while (glm::distance(Pc, Pd) > MIN_DISTANCE_TO_TARGET) { //#Optimization: use squared distance calculation
  		Plast = Pc;
-		for (unsigned int i = skeleton.size() - 2; i > 0; --i) {
+		for ( int i = skeleton.size() - 2; i >= 0; --i) {
 			SkeletonNode* currentJoint = skeleton[i];
-			vec3 currentJointPosition = currentJoint->globalVQS.translate;
+			vec3 currentJointPosition = currentJoint->localVQS.translate;
+
+			vec3 PcInv(glm::inverse(currentJoint->transformMatrix) * vec4(Pc, 1.0f));
+			vec3 PdInv(glm::inverse(currentJoint->transformMatrix) * vec4(Pd, 1.0f));
 
 			// Set vectors from k'th joint
-			Vck = glm::normalize(Pc - currentJointPosition);
-			Vdk = glm::normalize(Pd - currentJointPosition);
+			Vck = glm::normalize(PcInv - currentJointPosition);
+			Vdk = glm::normalize(PdInv - currentJointPosition);
 
 			float cosAngle = glm::dot(Vdk, Vck);
-			if (cosAngle < 0.999999f) { //which mean we rotated a little bit
+			if (cosAngle < 0.9999f) { //which mean we rotated a little bit
 				// Calculate angle and axis
 				float angle = acosf(cosAngle);
 				vec3 axis = glm::cross(Vck, Vdk);
 				// Unit axis
 				axis = glm::normalize(axis);
+
+				// Angle check - damping the rotation
+				float currentDampening = currentJoint->GetDampening(); //in degrees
+				currentDampening = DEGTORAD(currentDampening);
+				if (angle > currentDampening)
+					angle = currentDampening;
+
 				// Create the quaternion to rotate the joint
 				Quaternion rotator(axis, angle);
 				// Update local rotation of the current joint
 				Quaternion & originalRotation = currentJoint->localVQS.rotate;
-				originalRotation = rotator * originalRotation;
+				originalRotation = originalRotation * rotator;
+
+				//DOF restrictions
+				vec3 rotationEuler = originalRotation.EulerForm(); //degree
+				float maxAngle = currentJoint->GetMaxAngle();
+				float minAngle = currentJoint->GetMinAngle();
+
+				//ClampVector(rotationEuler, maxAngle, minAngle);
+				if (rotationEuler.x > maxAngle)
+					rotationEuler.x = maxAngle;
+				if (rotationEuler.x < minAngle)
+					rotationEuler.x = minAngle;
+				if (rotationEuler.y > maxAngle)
+					rotationEuler.y = maxAngle;
+				if (rotationEuler.y < minAngle)
+					rotationEuler.y = minAngle;
+				if (rotationEuler.z > maxAngle)
+					rotationEuler.z = maxAngle;
+				if (rotationEuler.z < minAngle)
+					rotationEuler.z = minAngle;
+
+				originalRotation = Quaternion(rotationEuler);
+
+				originalRotation.Normalize();
+
 				// Update skeleton's world coordinates starting from this
 				currentJoint->MoveAllToWorldSpace();
-
-				// Update Pc - end effector is updated when the world space is recalculated
 				Pc = endEffector->globalVQS.translate;
+
 			}
 		}
 

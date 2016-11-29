@@ -1,12 +1,8 @@
 #include "Quaternion.h"
-
-#ifndef PI
-#define PI 3.14159265359f
-#endif
+#include "AngleMath.h"
 
 const static float PiOver2 = PI * 0.5f;
 const static float EpsilonForEuler = 0.00000001f;
-const float angleMultiplication = (PI / 180.0f);
 
 Quaternion::Quaternion(float scalar /*= 1.0f*/, float x /*= 1.0f*/, float y /*= 1.0f*/, float z /*= 1.0f*/):
 	scalar(scalar), imaginary(x,y,z)
@@ -26,7 +22,7 @@ Quaternion::Quaternion(float scalar, vec3 const & imaginaryVector)
 
 Quaternion::Quaternion(vec3 const & rotationEulerVector)
 {
-	vec3 convertedEulerVector = rotationEulerVector * angleMultiplication;
+	vec3 convertedEulerVector = DEGTORAD(rotationEulerVector);
 
 	float cosX = glm::cos(convertedEulerVector[0] * 0.5f);
 	float cosY = glm::cos(convertedEulerVector[1] * 0.5f);
@@ -40,12 +36,11 @@ Quaternion::Quaternion(vec3 const & rotationEulerVector)
 	imaginary[1] = cosZ * sinY * cosX + sinZ * cosY * sinX;
 	imaginary[2] = sinZ * cosY * cosX - cosZ * sinY * sinX;
 	scalar = cosZ * cosY * cosX + sinZ * sinY * sinX;
-
 }
 
 Quaternion::Quaternion(vec3 const & unitAxis, float angle)
 {
-	float convertedAngle = angle * angleMultiplication;
+	float convertedAngle = DEGTORAD(angle);
 
 	scalar = cosf(convertedAngle / 2.0f);
 	imaginary = unitAxis * sinf(convertedAngle / 2.0f);
@@ -256,7 +251,7 @@ vec3 Quaternion::EulerForm() const
 		if (euler[1] < 0)
 			euler[2] = PI - euler[2];
 	}
-	return euler;
+	return RADTODEG(euler);
 }
 
 // Based on the algorithm used in Will Perone's website

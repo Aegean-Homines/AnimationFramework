@@ -5,6 +5,7 @@
 #include "ModelManager.h"
 #include "SplineManager.h"
 #include "Skeleton.h"
+#include "AngleMath.h"
 
 #include <glew.h>
 #include <glm.hpp>
@@ -14,8 +15,6 @@
 #include <iostream>
 
 #define CUBE_SCALE 0.03f
-#define PI 3.14159265359f
-const float angleMultiplication = (PI / 180.0f);
 float targetObjectDeltaPosition = 0.5f;
 
 using glm::vec3;
@@ -62,9 +61,9 @@ void GraphicsManager::DrawGround(ShaderProgram& program)
 	vec3 groundColor(1.0f, 0.5f, 0.0f);
 
 	worldTransformation = glm::translate(worldTransformation, translate);
-	worldTransformation = glm::rotate(worldTransformation, rotate.z * angleMultiplication, vec3(0.0f, 0.0f, 1.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.y * angleMultiplication, vec3(0.0f, 1.0f, 0.0f));
-	worldTransformation = glm::rotate(worldTransformation, rotate.x * angleMultiplication, vec3(1.0f, 0.0f, 0.0f));
+	worldTransformation = glm::rotate(worldTransformation, DEGTORAD(rotate.z), vec3(0.0f, 0.0f, 1.0f));
+	worldTransformation = glm::rotate(worldTransformation, DEGTORAD(rotate.y), vec3(0.0f, 1.0f, 0.0f));
+	worldTransformation = glm::rotate(worldTransformation, DEGTORAD(rotate.x), vec3(1.0f, 0.0f, 0.0f));
 	worldTransformation = glm::scale(worldTransformation, scale);
 
 	GLint transformLocation = glGetUniformLocation(program.program, "Transform");
@@ -308,9 +307,11 @@ void GraphicsManager::InitializeData()
 	TargetObject* instance = TargetObject::Instance();
 	instance->SetMesh(GetMesh(CUBE));
 	instance->SetPosition(vec3(8.0f, 2.0f, 0.0f));
-	instance->SetRotation(vec3(0.0f * angleMultiplication));
+	instance->SetRotation(vec3(DEGTORAD(0.0f)));
 	instance->ScaleObject(vec3(1.0f));
 	instance->SetColor(vec3(0.4f, 1.0, 0.1f));
+	instance->SetColor(vec3(0.4f, 1.0, 0.1f));
+	instance->SetLastUpdatedPosition(vec3(8.0f, 2.0f, 0.0f));
 }
 
 void GraphicsManager::SetWireframeMode(bool wireframeMode)

@@ -4,6 +4,8 @@
 #include "GraphicsManager.h"
 #include "EventManager.h"
 #include "Quaternion.h"
+#include "AngleMath.h"
+
 
 #include <fbxsdk.h>
 #include <iostream>
@@ -12,12 +14,9 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
-#define PI 3.14159265359f
 #define SCALING_FACTOR 1.0f
 #define INTERPOLATION_VALUE 0.5f
 #define EPSILON_TEST 0.000001f
-
-const float angleMultiplication = (PI / 180.0f);
 
 SkeletonNode::SkeletonNode(std::string const & nodeName, vec3 const & color): nodeName(nodeName), nodeColor(color)
 {
@@ -25,6 +24,10 @@ SkeletonNode::SkeletonNode(std::string const & nodeName, vec3 const & color): no
 	meshType = CUBE;
 	forwardVector = vec3(0.0f, 0.0f, 1.0f);
 	upVector = vec3(0.0f, 1.0f, 0.0f);
+
+	dampening = 20.0f;
+	minRotation = -60.0f;
+	maxRotation = 60.0f;
 }
 
 
@@ -39,7 +42,7 @@ void SkeletonNode::Draw(ShaderProgram const & program, float elapseTime)
 
 		// Get parent transform VQS and concat with my current one to find its place in world coords
 		ToWorldSpace();
-
+		
 		// Get matrix data from VQS to find node's final position in world coords
 		mat4 worldTransformation(1.0f);
 		worldTransformation = glm::translate(worldTransformation, globalVQS.translate);
@@ -80,6 +83,8 @@ void SkeletonNode::ToWorldSpace()
 {
 	VQS& parentTransform = parent->globalVQS;
  	globalVQS = parentTransform * localVQS;
+
+	transformMatrix = glm::translate(mat4(1.0f), globalVQS.translate) * globalVQS.rotate.RotationMatrix();
 }
 
 void SkeletonNode::MoveAllToWorldSpace()
@@ -116,6 +121,16 @@ void SkeletonNode::SetVQSAtIndex(int index, VQS const & vqs)
 VQS & SkeletonNode::GetVQSAtIndex(int index)
 {
 	return transformationMap[index];
+}
+
+mat4 SkeletonNode::GetWorldTransform()
+{
+	return glm::translate(mat4(1.0f), globalVQS.translate);
+}
+
+mat4 SkeletonNode::GetLocalTransform()
+{
+	return glm::translate(mat4(1.0f), localVQS.translate);
 }
 
 void SkeletonNode::Insert(int keyFrameTime, VQS transformation)
@@ -185,7 +200,7 @@ bool SkeletonNode::LookAt(vec3 const & targetLocation)
 	}
 
 	// normal rotation
-	float rotationAngle = acosf(dotProduct) / angleMultiplication;
+	float rotationAngle = RADTODEG(acosf(dotProduct));
 	vec3 rotationAxis = glm::cross(nodeNormalizedForward, newForward);
 	rotationAxis = glm::normalize(rotationAxis);
 
@@ -200,7 +215,6 @@ bool SkeletonNode::LookAt(vec3 const & targetLocation)
 
 void SkeletonNode::DrawLinesBetweenNodes(ShaderProgram const & program)
 {
-
 	// for some weird thing between root and its children
 	if (parent == NULL)
 		return;
@@ -221,7 +235,7 @@ void SkeletonNode::CalculateTransformVQS(float time)
 		//No animation data exists
 		return;
 	}
-		
+	
 
 	++next; 
 

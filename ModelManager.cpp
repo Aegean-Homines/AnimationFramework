@@ -4,20 +4,18 @@
 #include "SkeletonNode.h"
 #include "Skeleton.h"
 #include "VQS.h"
+#include "AngleMath.h"
 
 #include <glfw3.h>
 #include <iostream>
 #include <string>
 
 #define FRAME_RATE_MODE FbxTime::eDefaultMode
-#define PI 3.14159265359f
 #define TRANSLATE_AMOUNT 1.0f
 #define NO_MODEL_NODE_CHAIN_LENGTH 6
 
 using std::cout;
 using std::endl;
-
-const float angleMultiplication = (PI / 180.0f);
 
 ModelManager* ModelManager::instance = NULL;
 

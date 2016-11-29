@@ -18,11 +18,19 @@ public:
 	vec3 const & CameraTarget() const { return cameraTarget; }
 	void CameraTarget(vec3 const & newCameraTarget) { cameraTarget = newCameraTarget; }
 
+	vec3 const & GetForwardVector() { return cameraFront; }
+	vec3 const & GetRightVector() { return cameraRight; }
+	vec3 const & GetUpVector() { return up; }
+
+
+
 	void Update();
 private:
 	vec3 cameraPosition;
 	vec3 cameraTarget;
 	vec3 cameraFront;
+	vec3 cameraRight;
+	vec3 up;
 	vec3 initialCameraPosition;
 
 	float yaw, pitch;

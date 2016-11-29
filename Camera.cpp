@@ -9,13 +9,15 @@
 #define CAMERA_SPEED 5.0f
 #define MOUSE_SENSITIVITY 0.10f
 
-const vec3 up(0.0f, 1.0f, 0.0f);
+
 
 Camera::Camera(vec3 cameraPosition /*= vec3(0.0f, 0.0f, 0.0f)*/, vec3 cameraTarget /*= vec3(0.0f, 0.0f, 0.0f)*/) :
 	cameraPosition(cameraPosition), cameraTarget(cameraTarget), cameraFront(0.0f, 0.0f, -1.0f)
 {
 	yaw = -90.0f;
 	pitch = 0.0f;
+	up = vec3(0.0f, 1.0f, 0.0f);
+	cameraRight = glm::normalize(glm::cross(cameraFront, up));
 
 	initialCameraPosition = cameraPosition;
 }
@@ -44,9 +46,9 @@ void Camera::Update()
 	if (EventManager::IsKeyPressed(GLFW_KEY_S))
 		cameraPosition -= cameraSpeed * cameraFront;
 	if (EventManager::IsKeyPressed(GLFW_KEY_A))
-		cameraPosition -= glm::normalize(glm::cross(cameraFront, up)) * cameraSpeed;
+		cameraPosition -= cameraRight * cameraSpeed;
 	if (EventManager::IsKeyPressed(GLFW_KEY_D))
-		cameraPosition += glm::normalize(glm::cross(cameraFront, up)) * cameraSpeed;
+		cameraPosition += cameraRight * cameraSpeed;
 	if (EventManager::IsKeyPressed(GLFW_KEY_Q))
 		cameraPosition += cameraSpeed * up;
 	if (EventManager::IsKeyPressed(GLFW_KEY_E))
@@ -70,6 +72,8 @@ void Camera::Update()
 		front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
 
 		cameraFront = glm::normalize(front);
+
+		cameraRight = glm::normalize(glm::cross(cameraFront, up));
 	}
 
 }

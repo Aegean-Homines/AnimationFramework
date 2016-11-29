@@ -2,6 +2,8 @@
 #include "EventManager.h"
 #include "SplineManager.h"
 #include "Skeleton.h"
+#include "Camera.h"
+#include "GraphicsManager.h"
 #include "Mesh.h"
 
 #include <iostream>
@@ -9,7 +11,8 @@
 #include <glew.h>
 #include <gtc/matrix_transform.hpp>
 
-#define TARGET_SPEED 0.5f
+#define TARGET_SPEED 0.05f
+#define USE_CAMERA_SPACE true
 
 using glm::mat4;
 TargetObject* TargetObject::instance = nullptr;
@@ -17,6 +20,7 @@ TargetObject* TargetObject::instance = nullptr;
 TargetObject::TargetObject(vec3 position, vec3 rotation, vec3 scale, vec3 color):
 	position(position), rotation(rotation), scale(scale), color(color)
 {
+	lastUpdatedPosition = position;
 }
 
 TargetObject::~TargetObject()
@@ -57,26 +61,110 @@ void TargetObject::Update()
     SplineManager* instance = SplineManager::Instance();
 	if (EventManager::IsKeyPressed(GLFW_KEY_SPACE)) {
 		isPossessed = true;
-		if (EventManager::IsKeyTriggered(GLFW_KEY_UP)) {
-			position.z -= TARGET_SPEED;
-		}
 
-		if (EventManager::IsKeyTriggered(GLFW_KEY_DOWN)) {
-			position.z += TARGET_SPEED;
-		}
+		Camera& camera = GraphicsManager::GetCamera();
+		vec3 const & up = camera.GetUpVector();
+		vec3 const & forward = camera.GetForwardVector();
+		vec3 const & right = camera.GetRightVector();
 
-		if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT)) {
-			position.x -= TARGET_SPEED;
-		}
+		// Mouse control
+		if (EventManager::IsMouseButtonPressed(RIGHT)) {
+			double wheelY = EventManager::WheelOffsetY();
 
-		if (EventManager::IsKeyTriggered(GLFW_KEY_RIGHT)) {
-			position.x += TARGET_SPEED;
-		}
-	}
-	else if (EventManager::IsKeyReleased(GLFW_KEY_SPACE) && isPossessed) {
-		std::cout << "ISKEYRELEASED" << std::endl;
-		instance->TargetObjectNewMoved(position); //Re-initialize splines
+			if (EventManager::MouseDeltaX() || EventManager::MouseDeltaY() || wheelY) {
+				isPossessed = true;
+			}
+#if USE_CAMERA_SPACE
+			position += static_cast<float>(EventManager::MouseDeltaX()) * TARGET_SPEED * right;
+			position += static_cast<float>(EventManager::MouseDeltaY()) * TARGET_SPEED * forward;
+			position += static_cast<float>(wheelY) * TARGET_SPEED * up;
+#else
+			position.x += static_cast<float>(EventManager::MouseDeltaX()) * TARGET_SPEED;
+			position.y += static_cast<float>(EventManager::MouseDeltaY()) * TARGET_SPEED;
+			position.z += static_cast<float>(wheelY) * TARGET_SPEED;
+#endif
 		
+		}
+		else { // Keyboard control
+#if USE_CAMERA_SPACE
+			if (EventManager::IsKeyTriggered(GLFW_KEY_UP)) {
+				position += (TARGET_SPEED * forward * 10.0f);
+				
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_DOWN)) {
+				position -= (TARGET_SPEED * forward * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT)) {
+				position -= (right * TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_RIGHT)) {
+				position += (right * TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT_SHIFT)) {
+				position += (TARGET_SPEED * up * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT_CONTROL)) {
+				position -= (TARGET_SPEED * up * 10.0f);
+				//isPossessed = true;
+			}
+#else
+			if (EventManager::IsKeyTriggered(GLFW_KEY_UP)) {
+				position.z += (TARGET_SPEED * 10.0f);
+				isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_DOWN)) {
+				position.z -= (TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT)) {
+				position.x -= (TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_RIGHT)) {
+				position.x += (TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT_SHIFT)) {
+				position.y += (TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+
+			if (EventManager::IsKeyTriggered(GLFW_KEY_LEFT_CONTROL)) {
+				position.y -= (TARGET_SPEED * 10.0f);
+				//isPossessed = true;
+			}
+#endif
+		}
+
+	}
+
+	if (isPossessed) {
+		if (lastUpdatedPosition != position)
+			instance->TargetObjectNewMoved(position); //Re-initialize splines
+
+		lastUpdatedPosition = position;
 		isPossessed = false;
 	}
+
+	/*else if (EventManager::IsKeyReleased(GLFW_KEY_SPACE) && isPossessed) {
+		
+		if(lastUpdatedPosition != position)
+			instance->TargetObjectNewMoved(position); //Re-initialize splines
+		
+		lastUpdatedPosition = position;
+		isPossessed = false;
+	}*/
 }

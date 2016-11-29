@@ -4,7 +4,6 @@
 #include <glm.hpp>
 #include <iostream>
 
-#define PI 3.14159265359f
 #define DURATION_MULTIPLIER 10000
 
 using glm::vec3;
