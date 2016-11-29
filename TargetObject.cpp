@@ -4,6 +4,7 @@
 #include "Skeleton.h"
 #include "Camera.h"
 #include "GraphicsManager.h"
+#include "ArcLengthSegmentManager.h"
 #include "Mesh.h"
 
 #include <iostream>
@@ -58,14 +59,17 @@ void TargetObject::Draw(ShaderProgram const & program)
 
 void TargetObject::Update()
 {
-    SplineManager* instance = SplineManager::Instance();
 	if (EventManager::IsKeyPressed(GLFW_KEY_SPACE)) {
 		isPossessed = true;
 
+// USE_CAMERA_SPACE: If enabled, it moves the target object with respect to camera viewport
+// If not, it uses world space directions to handle the movement - a bit confusing for my taste
+#if USE_CAMERA_SPACE
 		Camera& camera = GraphicsManager::GetCamera();
 		vec3 const & up = camera.GetUpVector();
 		vec3 const & forward = camera.GetForwardVector();
 		vec3 const & right = camera.GetRightVector();
+#endif
 
 		// Mouse control
 		if (EventManager::IsMouseButtonPressed(RIGHT)) {
@@ -75,9 +79,10 @@ void TargetObject::Update()
 				isPossessed = true;
 			}
 #if USE_CAMERA_SPACE
+
 			position += static_cast<float>(EventManager::MouseDeltaX()) * TARGET_SPEED * right;
 			position += static_cast<float>(EventManager::MouseDeltaY()) * TARGET_SPEED * forward;
-			position += static_cast<float>(wheelY) * TARGET_SPEED * up;
+			position += static_cast<float>(wheelY) * TARGET_SPEED * up * 4.0f;
 #else
 			position.x += static_cast<float>(EventManager::MouseDeltaX()) * TARGET_SPEED;
 			position.y += static_cast<float>(EventManager::MouseDeltaY()) * TARGET_SPEED;
@@ -152,8 +157,13 @@ void TargetObject::Update()
 	}
 
 	if (isPossessed) {
-		if (lastUpdatedPosition != position)
+		if (lastUpdatedPosition != position) {
+			// It changed its position = re-build everything
+			SplineManager* instance = SplineManager::Instance();
 			instance->TargetObjectNewMoved(position); //Re-initialize splines
+			ArcLengthSegmentManager* segmentManager = ArcLengthSegmentManager::Instance();
+			segmentManager->FillSegmentationTable(instance->alpha, 0.0001f);
+		}
 
 		lastUpdatedPosition = position;
 		isPossessed = false;

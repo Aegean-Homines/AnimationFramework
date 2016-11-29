@@ -139,7 +139,6 @@ void ModelManager::CreateTree()
 
 	/*rootNode->CalculateAllTransforms(0.0f);
 	rootNode->MoveAllToWorldSpace();*/
-
 }
 
 void ModelManager::InsertNode(FbxNode* fbxNode, FbxScene* scene, SkeletonNode* parent)

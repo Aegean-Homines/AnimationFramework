@@ -7,6 +7,7 @@ using glm::vec3;
 
 class Mesh;
 
+// Just a representation of the target object in the scene
 class TargetObject
 {
 public:
@@ -26,9 +27,9 @@ public:
 	vec3 const & Position() const { return position; }
 	vec3 const & LastUpdatedPosition() const { return lastUpdatedPosition; }
 
-
+	// For drawing a cube as a target
 	void Draw(ShaderProgram const & program);
-	void Update();
+	void Update(); //For mouse controls
 
 	static bool DoesExist() { return static_cast<bool>(instance); }
 private:

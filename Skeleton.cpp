@@ -11,7 +11,7 @@
 using glm::vec3;
 
 #define MIN_DISTANCE_TO_TARGET 0.01f
-#define DELTA_EPSILON_FOR_END_EFFECTOR 0.01f
+#define DELTA_EPSILON_FOR_END_EFFECTOR 0.1f
 
 Skeleton::Skeleton()
 {
@@ -65,8 +65,12 @@ void Skeleton::CalculateAllTransformsUsingIK()
 	// Last one is the end effector
 	SkeletonNode* endEffector = skeleton[skeleton.size() - 1];
 
+	std::vector<SkeletonNode*> nodePriorityList;
+	// Order nodes w.r.t a priority - we can add more options later
+	OrderNodes(skeleton, nodePriorityList, NONE);
+
 	// End effector position
-	vec3 Pc = endEffector->globalVQS.translate;
+ 	vec3 Pc = endEffector->globalVQS.translate;
 	// Target position
 	vec3 Pd = target->Position();
 
@@ -78,8 +82,8 @@ void Skeleton::CalculateAllTransformsUsingIK()
 
 	while (glm::distance(Pc, Pd) > MIN_DISTANCE_TO_TARGET) { //#Optimization: use squared distance calculation
  		Plast = Pc;
-		for ( int i = skeleton.size() - 2; i >= 0; --i) {
-			SkeletonNode* currentJoint = skeleton[i];
+		for ( int i = nodePriorityList.size() - 2; i >= 0; --i) {
+			SkeletonNode* currentJoint = nodePriorityList[i];
 			vec3 currentJointPosition = currentJoint->localVQS.translate;
 
 			// I need to take everything to the local space of the current node
@@ -152,5 +156,23 @@ void Skeleton::ResetAllNodes()
 {
 	for (unsigned int i = 0; i < skeleton.size(); ++i) {
 		skeleton[i]->localVQS = skeleton[i]->initialVQS;
+	}
+}
+
+void Skeleton::OrderNodes(vector<SkeletonNode*> const & skeleton, vector<SkeletonNode*> & orderedList, OrderingTechnique technique)
+{
+	orderedList.clear();
+
+	switch (technique)
+	{
+	case OrderingTechnique::REVERSE:
+		for (unsigned int i = skeleton.size() - 1; i != 0; --i) {
+			orderedList.push_back(skeleton[i]);
+		}
+		break;
+	case OrderingTechnique::NONE:
+	default:
+		orderedList.insert(orderedList.begin(), skeleton.begin(), skeleton.end());
+		break;
 	}
 }

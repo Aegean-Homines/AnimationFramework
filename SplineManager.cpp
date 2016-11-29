@@ -32,19 +32,8 @@ SplineManager::SplineManager()
 	InsertNode(new SplineNode(8.0f, 0.0f, 3.0f));
 	InsertNode(new SplineNode(12.0f, 0.0f, 0.0f));
 	InsertNode(new SplineNode(15.0f, 0.0f, 6.0f));*/
-	
-	vec3 const & targetPosition = TargetObject::Instance()->Position();
-	vec3 targetPositionFinal;
-	if (!signbit(targetPosition.x)) {
-		targetPositionFinal.x = targetPosition.x - DISTANCE_FROM_TARGET;
-
-	}
-	else {
-		targetPositionFinal.x = targetPosition.x + DISTANCE_FROM_TARGET;
-		targetPositionFinal.z = targetPosition.z + DISTANCE_FROM_TARGET;
-	}
-
-	InsertNode(new SplineNode(targetPositionFinal.x, 0, targetPosition.z));
+	vec3 dif = FindLastSplineNode();
+	InsertNode(new SplineNode(dif.x, 0, dif.z));
 
  	steps = static_cast<float>((nodeList.size() - 1) * INTERVAL);
 	drawingAlpha = 1.0f / steps;
@@ -158,11 +147,12 @@ void SplineManager::TargetObjectNewMoved(vec3 const & newPosition)
  	SplineNode* lastNode = nodeList.back();
 	SplineNode* firstNode = nodeList.front();
 	firstNode->nodeLocation = skeleton->GetJoint(0)->globalVQS.translate;
-	lastNode->nodeLocation.x = newPosition.x;
-	lastNode->nodeLocation.z = newPosition.z;
+	vec3 lastLoc = FindLastSplineNode();
+	lastNode->nodeLocation.x = lastLoc.x;
+	lastNode->nodeLocation.z = lastLoc.z;
 
 	CalculatePointsBetweenControlPoints();
-	skeleton->ResetAllNodes();
+	//skeleton->ResetAllNodes();
 
 	isAnimationFinished = false;
 	velocityTimer = 0.0f;
@@ -451,4 +441,13 @@ void SplineManager::SolveMatrix(Matrix & matrix)
 			}
 		}
 	}
+}
+
+vec3 SplineManager::FindLastSplineNode()
+{
+	vec3 const & targetPosition = TargetObject::Instance()->Position();
+	SkeletonNode* node = ModelManager::Instance()->CurrentAnimation()->skeleton->GetRoot();
+	vec3 rootLoc = node->globalVQS.translate;
+	vec3 dif = glm::normalize(targetPosition - rootLoc) * 2.0f;
+	return targetPosition - dif;
 }

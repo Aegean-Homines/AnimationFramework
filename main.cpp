@@ -37,7 +37,7 @@ void main(){
 	ModelManager* manager = ModelManager::Instance();
 	manager->CreateFbxManager();
 	manager->InitializeModel(CurrentModelName, (ModelMainDirectory + CurrentModelName + FbxExtension), 1.0f, vec3(0.2f, 0.1f, 1.0f));
-	manager->SetIK(true);
+	manager->SetIK(true); //If not set to IK mode, it tries look-up from the VQS table
 	// Create the spline data
  	SplineManager* splineManager = SplineManager::Instance();
 	splineManager->BuildSpline();

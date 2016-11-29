@@ -114,6 +114,7 @@ private:
 	void CreateMatrix(Matrix & matrix);
 	SplineNode* SplineInterpolate(float t);
 	void SolveMatrix(Matrix & matrix);
+	vec3 FindLastSplineNode();
 	// SingletonStuff
 	SplineManager();
 	SplineManager(SplineManager const &) {};
