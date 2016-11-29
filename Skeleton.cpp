@@ -82,6 +82,8 @@ void Skeleton::CalculateAllTransformsUsingIK()
 			SkeletonNode* currentJoint = skeleton[i];
 			vec3 currentJointPosition = currentJoint->localVQS.translate;
 
+			// I need to take everything to the local space of the current node
+			// I'm still not sure why though but nothings working when I do the calculations on the global space
 			vec3 PcInv(glm::inverse(currentJoint->transformMatrix) * vec4(Pc, 1.0f));
 			vec3 PdInv(glm::inverse(currentJoint->transformMatrix) * vec4(Pd, 1.0f));
 
@@ -114,8 +116,8 @@ void Skeleton::CalculateAllTransformsUsingIK()
 				float maxAngle = currentJoint->GetMaxAngle();
 				float minAngle = currentJoint->GetMinAngle();
 
-				//ClampVector(rotationEuler, maxAngle, minAngle);
-				if (rotationEuler.x > maxAngle)
+				ClampVector(rotationEuler, maxAngle, minAngle);
+				/*if (rotationEuler.x > maxAngle)
 					rotationEuler.x = maxAngle;
 				if (rotationEuler.x < minAngle)
 					rotationEuler.x = minAngle;
@@ -126,7 +128,7 @@ void Skeleton::CalculateAllTransformsUsingIK()
 				if (rotationEuler.z > maxAngle)
 					rotationEuler.z = maxAngle;
 				if (rotationEuler.z < minAngle)
-					rotationEuler.z = minAngle;
+					rotationEuler.z = minAngle;*/
 
 				originalRotation = Quaternion(rotationEuler);
 
@@ -134,8 +136,9 @@ void Skeleton::CalculateAllTransformsUsingIK()
 
 				// Update skeleton's world coordinates starting from this
 				currentJoint->MoveAllToWorldSpace();
-				Pc = endEffector->globalVQS.translate;
 
+				// Update Pc with its new global value
+				Pc = endEffector->globalVQS.translate;
 			}
 		}
 
